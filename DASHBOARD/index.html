@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0a0c10" />
+  <title>GRETA V2 — Control Terminal</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="dark">
+
+  <!-- ══════════════════════════════════════════════ HEADER -->
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-g">G</span>RETA
+        <span class="logo-ver">V2</span>
+      </div>
+      <div class="subtitle">ROVER CONTROL TERMINAL</div>
+    </div>
+    <div class="header-right">
+      <button id="themeToggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="5"/>
+          <line x1="12" y1="1"  x2="12" y2="3"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22"  y1="4.22"  x2="5.64"  y2="5.64"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="1"  y1="12" x2="3"  y2="12"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36"/>
+          <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════ MAIN GRID -->
+  <main>
+
+    <!-- ── LEFT COLUMN ───────────────────────────────────── -->
+    <section class="col-left">
+
+      <!-- Connection Panel -->
+      <div class="panel" id="connPanel">
+        <div class="panel-title">CONNECTION</div>
+        <div class="conn-row">
+          <div class="conn-status-dot" id="wsDot"></div>
+          <span id="wsLabel">Disconnected</span>
+          <span class="conn-addr mono" id="wsAddr"></span>
+        </div>
+        <div class="conn-input-row">
+          <input type="text" id="ipInput"
+                 placeholder="IP or greta.local"
+                 autocomplete="off"
+                 spellcheck="false" />
+          <button class="btn-connect" id="connectBtn">CONNECT</button>
+        </div>
+      </div>
+
+      <!-- Telemetry Panel -->
+      <div class="panel" id="telPanel">
+        <div class="panel-title">TELEMETRY</div>
+        <div class="telem-grid">
+
+          <div class="telem-item">
+            <div class="telem-label">STATE</div>
+            <div class="telem-value accent" id="telState">—</div>
+          </div>
+
+          <div class="telem-item">
+            <div class="telem-label">UPTIME</div>
+            <div class="telem-value mono" id="telUptime">—</div>
+          </div>
+
+          <div class="telem-item">
+            <div class="telem-label">WIFI</div>
+            <div class="telem-value" id="telWifi">—</div>
+          </div>
+
+          <div class="telem-item">
+            <div class="telem-label">BLUETOOTH</div>
+            <div class="telem-value" id="telBt">—</div>
+          </div>
+
+          <!-- Optional fields — hidden if ESP32 doesn't send them -->
+          <div class="telem-item">
+            <div class="telem-label">RSSI</div>
+            <div class="telem-value mono" id="telRssi">—</div>
+          </div>
+
+          <div class="telem-item">
+            <div class="telem-label">LATENCY</div>
+            <div class="telem-value mono" id="telLatency">—</div>
+          </div>
+
+          <div class="telem-item span2">
+            <div class="telem-label">LAST CMD</div>
+            <div class="telem-value mono" id="telLastCmd">—</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Face Display -->
+      <div class="panel" id="facePanel">
+        <div class="panel-title">ROBOT STATUS</div>
+        <div class="face-wrapper">
+          <div class="face" id="robotFace">
+            <div class="face-eyes">
+              <div class="eye" id="eyeL"></div>
+              <div class="eye" id="eyeR"></div>
+            </div>
+            <div class="face-mouth" id="faceM"></div>
+          </div>
+          <div class="face-state-label" id="faceStateLabel">OFFLINE</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ── RIGHT COLUMN ──────────────────────────────────── -->
+    <section class="col-right">
+
+      <!-- Movement Controls -->
+      <div class="panel" id="ctrlPanel">
+        <div class="panel-title">MOVEMENT</div>
+        <div class="dpad-wrapper">
+
+          <!-- Row 1: Forward -->
+          <div class="dpad-row">
+            <div class="dpad-spacer"></div>
+            <button class="dpad-btn" id="btnF"
+                    data-cmd="MOVE F"
+                    aria-label="Forward">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 14H4z"/></svg>
+            </button>
+            <div class="dpad-spacer"></div>
+          </div>
+
+          <!-- Row 2: Left / Stop / Right -->
+          <div class="dpad-row">
+            <button class="dpad-btn" id="btnL"
+                    data-cmd="MOVE L"
+                    aria-label="Left">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l14-8v16z"/></svg>
+            </button>
+            <button class="dpad-btn stop" id="btnStop"
+                    data-cmd="STOP"
+                    aria-label="Stop">
+              <span>STOP</span>
+            </button>
+            <button class="dpad-btn" id="btnR"
+                    data-cmd="MOVE R"
+                    aria-label="Right">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 12L6 4v16z"/></svg>
+            </button>
+          </div>
+
+          <!-- Row 3: Backward -->
+          <div class="dpad-row">
+            <div class="dpad-spacer"></div>
+            <button class="dpad-btn" id="btnB"
+                    data-cmd="MOVE B"
+                    aria-label="Backward">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-14H4z"/></svg>
+            </button>
+            <div class="dpad-spacer"></div>
+          </div>
+
+        </div>
+        <div class="keyboard-hint">
+          Arrows / WASD — move &nbsp;·&nbsp; Space — stop &nbsp;·&nbsp; E — ESTOP
+        </div>
+      </div>
+
+      <!-- Event Log -->
+      <div class="panel" id="logPanel">
+        <div class="panel-title">
+          EVENT LOG
+          <button class="btn-sm" id="clearLog">CLEAR</button>
+        </div>
+        <div class="log-scroll" id="logScroll">
+          <div class="log-empty" id="logEmpty">No events yet.</div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ══════════════════════════════════════════════ OBSTACLE BANNER -->
+  <div class="obstacle-banner" id="obstacleBanner">
+    ⚠ OBSTACLE DETECTED — SAFE MODE ACTIVE
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
