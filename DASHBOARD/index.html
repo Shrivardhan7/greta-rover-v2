@@ -83,7 +83,6 @@
             <div class="telem-value" id="telBt">—</div>
           </div>
 
-          <!-- Optional fields — hidden if ESP32 doesn't send them -->
           <div class="telem-item">
             <div class="telem-label">RSSI</div>
             <div class="telem-value mono" id="telRssi">—</div>
@@ -114,6 +113,21 @@
             <div class="face-mouth" id="faceM"></div>
           </div>
           <div class="face-state-label" id="faceStateLabel">OFFLINE</div>
+        </div>
+      </div>
+
+      <!-- Mode Panel -->
+      <div class="panel" id="modePanel">
+        <div class="panel-title">OPERATING MODE</div>
+        <div class="mode-badge-row">
+          <div class="mode-badge" id="modeBadge">MANUAL</div>
+          <div class="mode-desc" id="modeDesc">Direct control active</div>
+        </div>
+        <div class="mode-btn-grid">
+          <button class="mode-btn active" data-mode="MANUAL"     id="modeManual">MANUAL</button>
+          <button class="mode-btn"        data-mode="AUTONOMOUS" id="modeAutonomous">AUTO</button>
+          <button class="mode-btn"        data-mode="VOICE"      id="modeVoice">VOICE</button>
+          <button class="mode-btn safe"   data-mode="SAFE"       id="modeSafe">SAFE</button>
         </div>
       </div>
 
@@ -174,6 +188,31 @@
         </div>
       </div>
 
+      <!-- Voice Panel -->
+      <div class="panel" id="voicePanel">
+        <div class="panel-title">
+          VOICE CONTROL
+          <span class="voice-status-label" id="voiceStatusLabel">INACTIVE</span>
+        </div>
+        <div class="voice-row">
+          <button class="voice-btn" id="voiceBtn" aria-label="Hold to speak">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="2" width="6" height="11" rx="3"/>
+              <path d="M5 10a7 7 0 0014 0"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8"  y1="22" x2="16" y2="22"/>
+            </svg>
+          </button>
+          <div class="voice-info">
+            <div class="voice-transcript" id="voiceTranscript">Say a command…</div>
+            <div class="voice-hint">forward · back · left · right · stop</div>
+          </div>
+        </div>
+        <div class="voice-unsupported" id="voiceUnsupported" style="display:none">
+          ⚠ Web Speech API not supported in this browser.
+        </div>
+      </div>
+
       <!-- Event Log -->
       <div class="panel" id="logPanel">
         <div class="panel-title">
@@ -182,6 +221,17 @@
         </div>
         <div class="log-scroll" id="logScroll">
           <div class="log-empty" id="logEmpty">No events yet.</div>
+        </div>
+      </div>
+
+      <!-- Mission Log Panel -->
+      <div class="panel" id="missionPanel">
+        <div class="panel-title">
+          MISSION LOG
+          <button class="btn-sm" id="clearMission">CLEAR</button>
+        </div>
+        <div class="mission-scroll" id="missionScroll">
+          <div class="log-empty" id="missionEmpty">No mission events yet.</div>
         </div>
       </div>
 
@@ -195,5 +245,8 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="mode_manager.js"></script>
+  <script src="voice_control.js"></script>
+  <script src="mission_log.js"></script>
 </body>
 </html>

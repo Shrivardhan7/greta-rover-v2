@@ -290,7 +290,6 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   overflow: hidden;
 }
 
-/* CRT scanline overlay */
 .face::before {
   content: '';
   position: absolute; inset: 0;
@@ -474,7 +473,7 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   letter-spacing: 0.12em;
   text-align: center;
   padding: 10px;
-  z-index: 200;   /* Above header (z=100) */
+  z-index: 200;
   transform: translateY(-100%);
   transition: transform .35s cubic-bezier(.22,1,.36,1);
 }
@@ -487,3 +486,191 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   .dpad-spacer { width: 70px; height: 70px; }
   .logo        { font-size: 18px; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ADDITIONS — Mode Panel, Voice Panel, Mission Log Panel
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Mode Panel ─────────────────────────────────────────────────────────── */
+
+.mode-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mode-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--accent);
+  background: var(--bg-raised);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  transition: color .3s, border-color .3s;
+}
+
+.mode-badge.MANUAL     { color: var(--accent);  border-color: var(--accent); }
+.mode-badge.AUTONOMOUS { color: var(--ok);       border-color: var(--ok); }
+.mode-badge.VOICE      { color: var(--warn);     border-color: var(--warn); }
+.mode-badge.SAFE       { color: var(--error);    border-color: var(--error); }
+
+.mode-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.06em;
+}
+
+.mode-btn-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-btn {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  padding: 10px 0;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.mode-btn:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+
+.mode-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000;
+}
+
+.mode-btn.safe.active,
+.mode-btn.safe:hover {
+  background: var(--error);
+  border-color: var(--error);
+  color: #fff;
+}
+
+body.mode-blocked .dpad-btn:not(.stop) {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ─── Voice Panel ────────────────────────────────────────────────────────── */
+
+.voice-status-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.12em;
+  transition: color .2s;
+}
+.voice-status-label.listening { color: var(--warn); animation: blink .7s step-end infinite; }
+.voice-status-label.active    { color: var(--ok); }
+
+.voice-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.voice-btn {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  border: 2px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color .2s, background .2s, color .2s, box-shadow .2s;
+}
+
+.voice-btn svg { width: 24px; height: 24px; }
+
+.voice-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.voice-btn.listening {
+  border-color: var(--warn);
+  color: var(--warn);
+  background: var(--bg-raised);
+  box-shadow: 0 0 0 4px #ffc23322, 0 0 14px #ffc23344;
+  animation: voice-pulse 1s ease-in-out infinite;
+}
+
+.voice-btn.matched {
+  border-color: var(--ok);
+  color: var(--ok);
+  box-shadow: 0 0 0 4px #1bdb7022;
+}
+
+@keyframes voice-pulse {
+  0%,100% { box-shadow: 0 0 0 4px #ffc23322, 0 0 14px #ffc23344; }
+  50%     { box-shadow: 0 0 0 8px #ffc23311, 0 0 22px #ffc23333; }
+}
+
+.voice-info { flex: 1; min-width: 0; }
+
+.voice-transcript {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+  min-height: 18px;
+  transition: color .2s;
+}
+.voice-transcript.matched  { color: var(--ok); }
+.voice-transcript.no-match { color: var(--error); }
+
+.voice-hint {
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+}
+
+.voice-unsupported {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--warn);
+  letter-spacing: 0.06em;
+}
+
+/* ─── Mission Log Panel ──────────────────────────────────────────────────── */
+
+.mission-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.mission-scroll::-webkit-scrollbar       { width: 4px; }
+.mission-scroll::-webkit-scrollbar-track { background: transparent; }
+.mission-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.log-entry.ev-mode   .log-msg { color: var(--accent2); }
+.log-entry.ev-voice  .log-msg { color: var(--warn); }
+.log-entry.ev-system .log-msg { color: var(--text-dim); font-style: italic; }
