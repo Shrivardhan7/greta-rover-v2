@@ -1,30 +1,35 @@
+/**
+ * Greta Rover OS
+ * Copyright (c) 2026 Shrivardhan Jadhav
+ * Licensed under Apache License 2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
+
 #pragma once
-// ══════════════════════════════════════════════════════════════════════════════
-//  voice_engine.h  —  Greta V2  (STUB — not yet implemented)
+// ============================================================================
+//  voice_engine.h  —  Greta V2  (STUB — interface defined, driver TBD)
 //
-//  Design rationale:
-//    The voice engine owns all audio output personality. It is deliberately
-//    decoupled from the safety state machine — it observes state transitions
-//    via voice_on_state_change() callbacks registered from main.cpp, and
-//    queues phrases asynchronously so audio output never blocks the control loop.
+//  The voice engine owns all audio output and personality.
+//  It observes state transitions via voice_on_state_change() and queues
+//  phrases asynchronously so audio output never blocks the control loop.
 //
-//    Phrase selection follows a personality profile: Little Krishna style —
-//    gentle, warm, emotionally calming, bilingual Marathi/English.
-//    The language setting is runtime-configurable without a recompile.
+//  Personality profile: gentle, warm, emotionally calming.
+//  Language: bilingual Marathi / English — runtime-configurable.
 //
-//  Hardware target: I2S DAC + speaker, or PWM buzzer as fallback.
-//  Implementation: placeholder until I2S driver and audio buffer are integrated.
-// ══════════════════════════════════════════════════════════════════════════════
+//  Hardware target: I2S DAC + speaker, or PWM buzzer as a fallback.
+//  Implementation: pending I2S driver and audio buffer integration.
+// ============================================================================
 
 #include <Arduino.h>
+#include "state_manager.h"   // For RobotState — ensures type consistency
 
-// ─── Language selection ───────────────────────────────────────────────────────
+// ── Language selection ────────────────────────────────────────────────────────
 enum VoiceLanguage : uint8_t {
     VOICE_LANG_ENGLISH = 0,
     VOICE_LANG_MARATHI = 1,
 };
 
-// ─── Phrase categories ────────────────────────────────────────────────────────
+// ── Phrase catalogue ──────────────────────────────────────────────────────────
 enum VoicePhrase : uint8_t {
     PHRASE_READY,           // "I am ready"
     PHRASE_MOVING,          // "Moving"
@@ -34,19 +39,20 @@ enum VoicePhrase : uint8_t {
     PHRASE_LINK_RESTORED,   // "Connection restored"
     PHRASE_GREETING,        // Morning / arrival greeting
     PHRASE_GOODBYE,
-    PHRASE_ATTENTION,       // Cat-calling / attention-getting
+    PHRASE_ATTENTION,       // Attention-getting sound
     PHRASE_COUNT
 };
 
-// ─── Lifecycle ───────────────────────────────────────────────────────────────
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 void voice_init();
 void voice_update();    // Non-blocking audio pump — call every loop()
 
-// ─── Control ─────────────────────────────────────────────────────────────────
+// ── Control ───────────────────────────────────────────────────────────────────
 void voice_set_language(VoiceLanguage lang);
-void voice_speak(VoicePhrase phrase);   // Queues phrase; non-blocking
-void voice_set_volume(uint8_t vol);     // 0–100
+void voice_speak(VoicePhrase phrase);    // Queues phrase for playback; non-blocking
+void voice_set_volume(uint8_t vol);     // 0 = silent, 100 = full volume
 
-// ─── Observer ────────────────────────────────────────────────────────────────
-// Register this with the state manager to get automatic voice cues.
-void voice_on_state_change(uint8_t prevState, uint8_t newState);
+// ── Observer ──────────────────────────────────────────────────────────────────
+// Register this from main.cpp to get automatic voice cues on state changes.
+// Called by state_manager (or main.cpp adapter) on each FSM transition.
+void voice_on_state_change(RobotState prevState, RobotState newState);

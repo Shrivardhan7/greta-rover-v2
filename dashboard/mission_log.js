@@ -1,45 +1,56 @@
-// ════════════════════════════════════════════════════════════════════════════
+// Greta Rover OS
+// Copyright (c) 2026 Shrivardhan Jadhav
+// Licensed under Apache License 2.0
+
+// ══════════════════════════════════════════════════════════════════════════════
 //  GRETA V2 — mission_log.js
 //  Mission log: timestamped record of commands, mode changes, system events
 //
-//  Integration:
-//    Load AFTER app.js and mode_manager.js
-//    Depends on: nothing (self-contained, other modules call mission_log_add)
+//  Load order: AFTER app.js and mode_manager.js
+//  Dependencies: none — other modules call mission_log_add() to append entries
 //
 //  Design:
-//    Separate from the existing event log (which is ephemeral / session-only).
+//    Separate from the event log in app.js (which is session-only and ephemeral).
 //    Mission log is persisted in sessionStorage so it survives page refreshes
-//    within the same browser session but clears on tab close.
-//    Entries have: timestamp, type, message.
-//    Exportable as plain text for post-session review.
+//    within the same browser session, but clears on tab close.
 //
-//  Types and their CSS classes:
+//    Only significant events are mirrored here (not routine ACKs). The set of
+//    mirrored categories is defined in MISSION_CATEGORIES below.
+//
+//    Entries have: timestamp (HH:MM:SS), message, CSS class.
+//
+//  Entry CSS classes and their meaning:
 //    ev-command  — movement command sent
-//    ev-mode     — mode change
-//    ev-voice    — voice command
-//    ev-obstacle — obstacle event
-//    ev-system   — connection, boot, safety events
+//    ev-mode     — operating mode change
+//    ev-voice    — voice command matched
+//    ev-obstacle — obstacle event from hardware
+//    ev-system   — connection, boot, or safety system events
 //    ev-error    — errors
-// ════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════════
 
 'use strict';
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-const MISSION_LOG_MAX      = 100;    // Max entries kept in memory
-const MISSION_STORAGE_KEY  = 'greta_mission_log';
+const MISSION_LOG_MAX     = 100;
+const MISSION_STORAGE_KEY = 'greta_mission_log';
+
+// Event log categories that are significant enough to appear in the mission log.
+// Routine ACKs (ev-ack) are intentionally excluded.
+const MISSION_CATEGORIES = new Set([
+  'ev-command', 'ev-obstacle', 'ev-error', 'ev-connect', 'ev-mode', 'ev-voice',
+]);
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let _missionEntries = [];
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-// Add an entry to the mission log.
-// This is the function other modules call.
+// Append an entry to the mission log.
+// Called directly by other modules for mission-significant events.
 function mission_log_add(msg, cssClass) {
   const ts = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  const entry = { ts, msg, cssClass: cssClass || 'ev-system' };
+  _missionEntries.unshift({ ts, msg, cssClass: cssClass || 'ev-system' });
 
-  _missionEntries.unshift(entry);
   if (_missionEntries.length > MISSION_LOG_MAX) {
     _missionEntries.length = MISSION_LOG_MAX;
   }
@@ -48,31 +59,30 @@ function mission_log_add(msg, cssClass) {
   _mission_render();
 }
 
-// Export mission log as a plain text string
+// Export mission log as plain text in chronological order.
+// Useful for post-session review or debugging.
 function mission_log_export() {
   return _missionEntries
     .slice()
-    .reverse()    // Chronological order for export
+    .reverse()
     .map(e => `[${e.ts}] ${e.msg}`)
     .join('\n');
 }
 
-// Clear the mission log
+// Clear all mission log entries
 function mission_log_clear() {
   _missionEntries = [];
   sessionStorage.removeItem(MISSION_STORAGE_KEY);
   _mission_render();
 }
 
-// ─── Persistence ──────────────────────────────────────────────────────────────
+// ─── Session persistence ──────────────────────────────────────────────────────
+
 function _mission_persist() {
   try {
-    sessionStorage.setItem(
-      MISSION_STORAGE_KEY,
-      JSON.stringify(_missionEntries)
-    );
+    sessionStorage.setItem(MISSION_STORAGE_KEY, JSON.stringify(_missionEntries));
   } catch (_) {
-    // Storage quota exceeded — not critical
+    // Storage quota exceeded — not critical; log continues in memory
   }
 }
 
@@ -96,7 +106,6 @@ function _mission_render() {
   const empty  = document.getElementById('missionEmpty');
   if (!scroll) return;
 
-  // Remove existing entries
   scroll.querySelectorAll('.log-entry').forEach(el => el.remove());
 
   if (_missionEntries.length === 0) {
@@ -127,21 +136,16 @@ function _mission_render() {
   scroll.scrollTop = scroll.scrollHeight;
 }
 
-// ─── Auto-capture from existing event system ──────────────────────────────────
-// Mirror selected app.js log_add calls into the mission log automatically.
-// We extend log_add non-destructively.
+// ─── Mirror significant events from the main event log ───────────────────────
+// Wraps app.js's log_add to capture mission-significant categories.
+// This runs after app.js loads, so log_add is already defined.
 (function _patch_log_add() {
-  // Categories that are mission-significant (not just routine ACKs)
-  const MISSION_CATEGORIES = new Set([
-    'ev-command', 'ev-obstacle', 'ev-error', 'ev-connect', 'ev-mode', 'ev-voice',
-  ]);
-
   const _orig = window.log_add;
   if (typeof _orig !== 'function') return;
 
-  window.log_add = function(msg, cssClass) {
+  window.log_add = function (msg, cssClass) {
     _orig(msg, cssClass);
-    // Mirror to mission log if it's a significant category
+
     if (MISSION_CATEGORIES.has(cssClass)) {
       _missionEntries.unshift({
         ts:       new Date().toLocaleTimeString('en-GB', { hour12: false }),
@@ -157,10 +161,12 @@ function _mission_render() {
   };
 })();
 
-// ─── Export button (optional — add a button with id="exportMission" to HTML) ──
+// ─── Export button (optional) ─────────────────────────────────────────────────
+// Attach to a button with id="exportMission" in index.html to enable export.
 function _bind_export() {
   const btn = document.getElementById('exportMission');
   if (!btn) return;
+
   btn.addEventListener('click', () => {
     const text = mission_log_export();
     const blob = new Blob([text], { type: 'text/plain' });
@@ -180,14 +186,12 @@ function _bind_clear() {
   btn.addEventListener('click', mission_log_clear);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 function _mission_init() {
-  _mission_restore();   // Load previous session entries
+  _mission_restore();   // restore entries from previous page load in this session
   _bind_clear();
   _bind_export();
   _mission_render();
-
-  // Log session start
   mission_log_add('Mission session started', 'ev-system');
 }
 

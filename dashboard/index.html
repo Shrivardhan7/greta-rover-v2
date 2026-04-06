@@ -4,23 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#0a0c10" />
+  <meta name="description" content="Greta V2 — Rover Control Terminal" />
   <title>GRETA V2 — Control Terminal</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="dark">
 
   <!-- ══════════════════════════════════════════════ HEADER -->
-  <header>
+  <header role="banner">
     <div class="header-left">
-      <div class="logo">
+      <div class="logo" aria-label="Greta V2">
         <span class="logo-g">G</span>RETA
         <span class="logo-ver">V2</span>
       </div>
-      <div class="subtitle">ROVER CONTROL TERMINAL</div>
+      <div class="subtitle" aria-hidden="true">ROVER CONTROL TERMINAL</div>
     </div>
     <div class="header-right">
-      <button id="themeToggle" class="btn-icon" title="Toggle theme" aria-label="Toggle theme">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button id="themeToggle" class="btn-icon" title="Toggle light / dark theme" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="5"/>
           <line x1="12" y1="1"  x2="12" y2="3"/>
           <line x1="12" y1="21" x2="12" y2="23"/>
@@ -39,33 +40,37 @@
   <main>
 
     <!-- ── LEFT COLUMN ───────────────────────────────────── -->
-    <section class="col-left">
+    <section class="col-left" aria-label="Status and configuration">
 
       <!-- Connection Panel -->
-      <div class="panel" id="connPanel">
+      <div class="panel" id="connPanel" role="region" aria-label="Connection">
         <div class="panel-title">CONNECTION</div>
         <div class="conn-row">
-          <div class="conn-status-dot" id="wsDot"></div>
+          <div class="conn-status-dot" id="wsDot" role="status" aria-label="Connection status"></div>
           <span id="wsLabel">Disconnected</span>
-          <span class="conn-addr mono" id="wsAddr"></span>
+          <span class="conn-addr mono" id="wsAddr" aria-label="WebSocket address"></span>
         </div>
         <div class="conn-input-row">
-          <input type="text" id="ipInput"
-                 placeholder="IP or greta.local"
-                 autocomplete="off"
-                 spellcheck="false" />
+          <input
+            type="text"
+            id="ipInput"
+            placeholder="IP or greta.local"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Robot IP address or hostname"
+          />
           <button class="btn-connect" id="connectBtn">CONNECT</button>
         </div>
       </div>
 
       <!-- Telemetry Panel -->
-      <div class="panel" id="telPanel">
+      <div class="panel" id="telPanel" role="region" aria-label="Telemetry">
         <div class="panel-title">TELEMETRY</div>
         <div class="telem-grid">
 
           <div class="telem-item">
             <div class="telem-label">STATE</div>
-            <div class="telem-value accent" id="telState">—</div>
+            <div class="telem-value accent" id="telState" aria-live="polite">—</div>
           </div>
 
           <div class="telem-item">
@@ -101,29 +106,29 @@
         </div>
       </div>
 
-      <!-- Face Display -->
-      <div class="panel" id="facePanel">
+      <!-- Robot Face / Status Display -->
+      <div class="panel" id="facePanel" role="region" aria-label="Robot status display">
         <div class="panel-title">ROBOT STATUS</div>
         <div class="face-wrapper">
-          <div class="face" id="robotFace">
+          <div class="face" id="robotFace" aria-hidden="true">
             <div class="face-eyes">
               <div class="eye" id="eyeL"></div>
               <div class="eye" id="eyeR"></div>
             </div>
             <div class="face-mouth" id="faceM"></div>
           </div>
-          <div class="face-state-label" id="faceStateLabel">OFFLINE</div>
+          <div class="face-state-label" id="faceStateLabel" aria-live="polite">OFFLINE</div>
         </div>
       </div>
 
       <!-- Mode Panel -->
-      <div class="panel" id="modePanel">
+      <div class="panel" id="modePanel" role="region" aria-label="Operating mode">
         <div class="panel-title">OPERATING MODE</div>
         <div class="mode-badge-row">
-          <div class="mode-badge" id="modeBadge">MANUAL</div>
+          <div class="mode-badge" id="modeBadge" aria-live="polite">MANUAL</div>
           <div class="mode-desc" id="modeDesc">Direct control active</div>
         </div>
-        <div class="mode-btn-grid">
+        <div class="mode-btn-grid" role="group" aria-label="Mode selection">
           <button class="mode-btn active" data-mode="MANUAL"     id="modeManual">MANUAL</button>
           <button class="mode-btn"        data-mode="AUTONOMOUS" id="modeAutonomous">AUTO</button>
           <button class="mode-btn"        data-mode="VOICE"      id="modeVoice">VOICE</button>
@@ -134,69 +139,59 @@
     </section>
 
     <!-- ── RIGHT COLUMN ──────────────────────────────────── -->
-    <section class="col-right">
+    <section class="col-right" aria-label="Controls and logs">
 
       <!-- Movement Controls -->
-      <div class="panel" id="ctrlPanel">
+      <div class="panel" id="ctrlPanel" role="region" aria-label="Movement controls">
         <div class="panel-title">MOVEMENT</div>
-        <div class="dpad-wrapper">
+        <div class="dpad-wrapper" role="group" aria-label="Directional controls">
 
           <!-- Row 1: Forward -->
           <div class="dpad-row">
             <div class="dpad-spacer"></div>
-            <button class="dpad-btn" id="btnF"
-                    data-cmd="MOVE F"
-                    aria-label="Forward">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4l8 14H4z"/></svg>
+            <button class="dpad-btn" id="btnF" data-cmd="MOVE F" aria-label="Move forward">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 4l8 14H4z"/></svg>
             </button>
             <div class="dpad-spacer"></div>
           </div>
 
           <!-- Row 2: Left / Stop / Right -->
           <div class="dpad-row">
-            <button class="dpad-btn" id="btnL"
-                    data-cmd="MOVE L"
-                    aria-label="Left">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 12l14-8v16z"/></svg>
+            <button class="dpad-btn" id="btnL" data-cmd="MOVE L" aria-label="Turn left">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 12l14-8v16z"/></svg>
             </button>
-            <button class="dpad-btn stop" id="btnStop"
-                    data-cmd="STOP"
-                    aria-label="Stop">
+            <button class="dpad-btn stop" id="btnStop" data-cmd="STOP" aria-label="Stop">
               <span>STOP</span>
             </button>
-            <button class="dpad-btn" id="btnR"
-                    data-cmd="MOVE R"
-                    aria-label="Right">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 12L6 4v16z"/></svg>
+            <button class="dpad-btn" id="btnR" data-cmd="MOVE R" aria-label="Turn right">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 12L6 4v16z"/></svg>
             </button>
           </div>
 
           <!-- Row 3: Backward -->
           <div class="dpad-row">
             <div class="dpad-spacer"></div>
-            <button class="dpad-btn" id="btnB"
-                    data-cmd="MOVE B"
-                    aria-label="Backward">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20l8-14H4z"/></svg>
+            <button class="dpad-btn" id="btnB" data-cmd="MOVE B" aria-label="Move backward">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 20l8-14H4z"/></svg>
             </button>
             <div class="dpad-spacer"></div>
           </div>
 
         </div>
-        <div class="keyboard-hint">
+        <div class="keyboard-hint" aria-label="Keyboard shortcuts">
           Arrows / WASD — move &nbsp;·&nbsp; Space — stop &nbsp;·&nbsp; E — ESTOP
         </div>
       </div>
 
-      <!-- Voice Panel -->
-      <div class="panel" id="voicePanel">
+      <!-- Voice Control Panel (hidden until VOICE mode is active) -->
+      <div class="panel" id="voicePanel" role="region" aria-label="Voice control">
         <div class="panel-title">
           VOICE CONTROL
           <span class="voice-status-label" id="voiceStatusLabel">INACTIVE</span>
         </div>
         <div class="voice-row">
-          <button class="voice-btn" id="voiceBtn" aria-label="Hold to speak">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button class="voice-btn" id="voiceBtn" aria-label="Tap to speak a voice command">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
               <rect x="9" y="2" width="6" height="11" rx="3"/>
               <path d="M5 10a7 7 0 0014 0"/>
               <line x1="12" y1="19" x2="12" y2="22"/>
@@ -208,29 +203,29 @@
             <div class="voice-hint">forward · back · left · right · stop</div>
           </div>
         </div>
-        <div class="voice-unsupported" id="voiceUnsupported" style="display:none">
+        <div class="voice-unsupported" id="voiceUnsupported" style="display:none" role="alert">
           ⚠ Web Speech API not supported in this browser.
         </div>
       </div>
 
       <!-- Event Log -->
-      <div class="panel" id="logPanel">
+      <div class="panel" id="logPanel" role="region" aria-label="Event log">
         <div class="panel-title">
           EVENT LOG
-          <button class="btn-sm" id="clearLog">CLEAR</button>
+          <button class="btn-sm" id="clearLog" aria-label="Clear event log">CLEAR</button>
         </div>
-        <div class="log-scroll" id="logScroll">
+        <div class="log-scroll" id="logScroll" role="log" aria-live="polite" aria-label="Event log entries">
           <div class="log-empty" id="logEmpty">No events yet.</div>
         </div>
       </div>
 
       <!-- Mission Log Panel -->
-      <div class="panel" id="missionPanel">
+      <div class="panel" id="missionPanel" role="region" aria-label="Mission log">
         <div class="panel-title">
           MISSION LOG
-          <button class="btn-sm" id="clearMission">CLEAR</button>
+          <button class="btn-sm" id="clearMission" aria-label="Clear mission log">CLEAR</button>
         </div>
-        <div class="mission-scroll" id="missionScroll">
+        <div class="mission-scroll" id="missionScroll" role="log" aria-label="Mission log entries">
           <div class="log-empty" id="missionEmpty">No mission events yet.</div>
         </div>
       </div>
@@ -240,13 +235,22 @@
   </main>
 
   <!-- ══════════════════════════════════════════════ OBSTACLE BANNER -->
-  <div class="obstacle-banner" id="obstacleBanner">
+  <!-- Shown automatically when the robot detects an obstacle -->
+  <div class="obstacle-banner" id="obstacleBanner" role="alert" aria-live="assertive">
     ⚠ OBSTACLE DETECTED — SAFE MODE ACTIVE
   </div>
 
+  <!--
+    Script load order matters — each file depends on the one before it:
+      app.js         — core WebSocket, telemetry, face engine, event log, cmd_send
+      mode_manager.js — mode gating; wraps ws_on_message and cmd_send from app.js
+      voice_control.js — voice recognition; depends on mode_get from mode_manager.js
+      mission_log.js — mission log; wraps log_add from app.js
+  -->
   <script src="app.js"></script>
   <script src="mode_manager.js"></script>
   <script src="voice_control.js"></script>
   <script src="mission_log.js"></script>
+
 </body>
 </html>

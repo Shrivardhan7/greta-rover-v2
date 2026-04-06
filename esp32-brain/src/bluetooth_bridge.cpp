@@ -1,22 +1,51 @@
+/**
+ * Greta Rover OS
+ * Copyright (c) 2026 Shrivardhan Jadhav
+ * Licensed under Apache License 2.0
+ * https://www.apache.org/licenses/LICENSE-2.0
+ */
+
+// ============================================================================
+//  bluetooth_bridge.cpp — UART Bridge to Arduino Motor Controller
+//
+//  This module manages the serial link between the ESP32-S3 and the Arduino
+//  Uno. "Bluetooth" in the name refers to the physical Bluetooth UART module
+//  sitting on this link — the ESP32 itself treats it as a plain UART.
+//
+//  Protocol:
+//    TX: plaintext command strings terminated with \r\n  (e.g. "FORWARD\r\n")
+//    RX: plaintext ACK strings terminated with \n        (e.g. "ACK_STOP\n")
+//
+//  Safety:
+//    If no bytes are received for BT_SILENCE_TIMEOUT_MS after the first
+//    connection, the link is declared lost and state transitions to STATE_SAFE.
+//    This stops the rover if the Arduino or the UART module goes silent.
+//
+//  Buffer strategy:
+//    All buffers are static — no heap allocation. One complete line is held
+//    in _lastLine[]. bluetooth_read() returns a pointer to this buffer, which
+//    remains valid until the next call to bluetooth_update().
+// ============================================================================
+
 #include "bluetooth_bridge.h"
 #include "config.h"
 #include "state_manager.h"
 #include <HardwareSerial.h>
 #include <Arduino.h>
 
-// ─── Private ─────────────────────────────────────────────────────────────────
+// ── Private ──────────────────────────────────────────────────────────────────
 static HardwareSerial _btSerial(BT_UART_NUM);
 
-// RX line buffer — static, no heap allocation
-static char     _rxBuf[BT_RX_BUF_SIZE];
-static uint8_t  _rxLen      = 0;
-static char     _lastLine[BT_RX_BUF_SIZE];
-static bool     _lineReady  = false;
+// Static line buffer — no heap allocation
+static char    _rxBuf[BT_RX_BUF_SIZE];
+static uint8_t _rxLen     = 0;
+static char    _lastLine[BT_RX_BUF_SIZE];
+static bool    _lineReady = false;
 
-static bool     _connected  = false;
-static uint32_t _lastRxMs   = 0;
+static bool     _connected = false;
+static uint32_t _lastRxMs  = 0;
 
-// ─── Lifecycle ───────────────────────────────────────────────────────────────
+// ── Lifecycle ─────────────────────────────────────────────────────────────────
 void bluetooth_init() {
     _btSerial.begin(BT_BAUD, SERIAL_8N1, BT_RX_PIN, BT_TX_PIN);
     _lastRxMs  = millis();
@@ -27,20 +56,21 @@ void bluetooth_init() {
 }
 
 void bluetooth_update() {
-    _lineReady = false;    // Cleared each update; caller checks within same loop tick
+    _lineReady = false;    // Reset each tick; caller must read within the same tick
 
     // ── Drain UART RX FIFO ───────────────────────────────────────────────────
     while (_btSerial.available()) {
         char c = static_cast<char>(_btSerial.read());
         _lastRxMs = millis();
 
+        // First byte received — declare link up
         if (!_connected) {
             _connected = true;
-            Serial.println(F("[BT] Link UP (first byte)"));
+            Serial.println(F("[BT] Link UP"));
         }
 
         if (c == '\n') {
-            // Strip trailing CR if present
+            // Strip trailing CR if present (handles \r\n line endings)
             if (_rxLen > 0 && _rxBuf[_rxLen - 1] == '\r') {
                 _rxLen--;
             }
@@ -51,12 +81,12 @@ void bluetooth_update() {
                 Serial.printf("[BT] RX: %s\n", _lastLine);
             }
             _rxLen = 0;
+
         } else {
-            // Guard against buffer overrun — discard overlong lines
+            // Guard against buffer overrun — discard overlong lines silently
             if (_rxLen < BT_RX_BUF_SIZE - 1) {
                 _rxBuf[_rxLen++] = c;
             } else {
-                // Overrun: reset and discard
                 Serial.println(F("[BT] RX overrun — discarding line"));
                 _rxLen = 0;
             }
@@ -64,27 +94,28 @@ void bluetooth_update() {
     }
 
     // ── Silence watchdog ─────────────────────────────────────────────────────
-    // Only armed after first connection to avoid false positive at boot.
+    // Only active after the first byte has been received, to avoid a false
+    // positive at boot before the Arduino has sent anything.
     if (_connected) {
-        const uint32_t silence = millis() - _lastRxMs;
+        uint32_t silence = millis() - _lastRxMs;
         if (silence >= BT_SILENCE_TIMEOUT_MS) {
             _connected = false;
-            Serial.printf("[BT] Link LOST (silence %lu ms) → SAFE\n", silence);
+            Serial.printf("[BT] Link LOST (silent for %lu ms) → SAFE\n", silence);
             state_set(STATE_SAFE, "BT silence timeout");
         }
     }
 }
 
-// ─── TX ──────────────────────────────────────────────────────────────────────
+// ── TX ───────────────────────────────────────────────────────────────────────
 void bluetooth_send(const char* cmd) {
-    _btSerial.println(cmd);     // println appends \r\n — Arduino trims both
+    _btSerial.println(cmd);    // println appends \r\n; Arduino firmware trims both
     Serial.printf("[BT] TX: %s\n", cmd);
 }
 
-// ─── RX ──────────────────────────────────────────────────────────────────────
-bool        bluetooth_available()  { return _lineReady; }
-const char* bluetooth_read()       { return _lastLine; }
+// ── RX ───────────────────────────────────────────────────────────────────────
+bool        bluetooth_available() { return _lineReady; }
+const char* bluetooth_read()      { return _lastLine; }
 
-// ─── Status ──────────────────────────────────────────────────────────────────
+// ── Status ───────────────────────────────────────────────────────────────────
 bool     bluetooth_connected()  { return _connected; }
 uint32_t bluetooth_last_rx_ms() { return _lastRxMs; }

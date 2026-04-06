@@ -1,71 +1,84 @@
 /* ══════════════════════════════════════════════════════════════════════════════
-   GRETA V2  —  Dashboard Styles
-   Aesthetic: Industrial terminal / utilitarian dark
-   Fonts: IBM Plex Mono (mono) + Barlow Condensed (labels)
+   GRETA V2 — Dashboard Styles
+   Aesthetic: Industrial terminal / utilitarian dark UI
+   Fonts: IBM Plex Mono (monospace values) + Barlow Condensed (labels/UI)
 
-   Changes from V1:
-     • `connecting` face state added
-     • RSSI and latency telem rows
-     • ESTOP keyboard hint
-     • Telem-value `warn` class
-     • Log uses documentFragment (JS) — no CSS change needed
-     • Banner z-index raised above header
+   Sections:
+     1. Design tokens (CSS variables)
+     2. Reset
+     3. Typography / global
+     4. Header
+     5. Main grid layout
+     6. Panel
+     7. Connection panel
+     8. Telemetry
+     9. Robot face / status display
+    10. D-pad movement controls
+    11. Event log
+    12. Obstacle banner
+    13. Mode panel
+    14. Voice panel
+    15. Mission log panel
+    16. Responsive overrides
    ══════════════════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Barlow+Condensed:wght@400;600;700&display=swap');
 
-/* ─── Design tokens ───────────────────────────────────────────────────────── */
+/* ─── 1. Design tokens ────────────────────────────────────────────────────── */
+/* Dark theme (default) */
 :root {
-  --bg:         #0a0c10;
-  --bg-panel:   #111418;
-  --bg-raised:  #181c22;
-  --border:     #252a33;
-  --border-hi:  #3a4252;
-  --text:       #c8d0de;
-  --text-dim:   #5a6478;
-  --text-faint: #2a3040;
-  --accent:     #00e5ff;
-  --accent2:    #ff4a6e;
-  --stop-bg:    #ff1a3c;
-  --stop-hover: #ff4060;
-  --ok:         #1bdb70;
-  --warn:       #ffc233;
-  --error:      #ff3355;
-  --move-bg:    #181c22;
-  --move-hover: #222836;
-  --move-active:#00e5ff22;
+  --bg:          #0a0c10;
+  --bg-panel:    #111418;
+  --bg-raised:   #181c22;
+  --border:      #252a33;
+  --border-hi:   #3a4252;
+  --text:        #c8d0de;
+  --text-dim:    #5a6478;
+  --text-faint:  #2a3040;
+  --accent:      #00e5ff;   /* cyan — primary interactive colour */
+  --accent2:     #ff4a6e;   /* pink — secondary / danger-adjacent */
+  --stop-bg:     #ff1a3c;   /* STOP button fill */
+  --stop-hover:  #ff4060;
+  --ok:          #1bdb70;   /* healthy / connected */
+  --warn:        #ffc233;   /* degraded / caution */
+  --error:       #ff3355;   /* fault / disconnected */
+  --move-bg:     #181c22;   /* D-pad button background */
+  --move-hover:  #222836;
+  --move-active: #00e5ff22; /* D-pad button pressed tint */
 
-  --radius:     6px;
-  --gap:        14px;
-  --panel-pad:  20px;
-  --header-h:   56px;
+  --radius:      6px;
+  --gap:         14px;
+  --panel-pad:   20px;
+  --header-h:    56px;
 }
 
+/* Light theme — toggled via body.light class */
 .light {
-  --bg:         #f0f2f5;
-  --bg-panel:   #ffffff;
-  --bg-raised:  #e8eaee;
-  --border:     #d0d4dc;
-  --border-hi:  #a8afc0;
-  --text:       #1a2030;
-  --text-dim:   #7080a0;
-  --text-faint: #c8ccd8;
-  --accent:     #0090b8;
-  --accent2:    #d42050;
-  --stop-bg:    #e01030;
-  --stop-hover: #c00020;
-  --ok:         #12a050;
-  --warn:       #d08000;
-  --error:      #cc1030;
-  --move-bg:    #eaecf0;
-  --move-hover: #dde0e8;
-  --move-active:#0090b820;
+  --bg:          #f0f2f5;
+  --bg-panel:    #ffffff;
+  --bg-raised:   #e8eaee;
+  --border:      #d0d4dc;
+  --border-hi:   #a8afc0;
+  --text:        #1a2030;
+  --text-dim:    #7080a0;
+  --text-faint:  #c8ccd8;
+  --accent:      #0090b8;
+  --accent2:     #d42050;
+  --stop-bg:     #e01030;
+  --stop-hover:  #c00020;
+  --ok:          #12a050;
+  --warn:        #d08000;
+  --error:       #cc1030;
+  --move-bg:     #eaecf0;
+  --move-hover:  #dde0e8;
+  --move-active: #0090b820;
 }
 
-/* ─── Reset ───────────────────────────────────────────────────────────────── */
+/* ─── 2. Reset ────────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { height: 100%; }
 
+/* ─── 3. Typography / global ─────────────────────────────────────────────── */
 body {
   min-height: 100%;
   background: var(--bg);
@@ -73,13 +86,13 @@ body {
   font-family: 'Barlow Condensed', sans-serif;
   font-size: 15px;
   letter-spacing: 0.02em;
-  transition: background .25s, color .25s;
+  transition: background 0.25s, color 0.25s;
   -webkit-tap-highlight-color: transparent;
 }
 
 .mono { font-family: 'IBM Plex Mono', monospace; }
 
-/* ─── Header ──────────────────────────────────────────────────────────────── */
+/* ─── 4. Header ───────────────────────────────────────────────────────────── */
 header {
   height: var(--header-h);
   display: flex;
@@ -117,15 +130,18 @@ header {
   border-radius: var(--radius);
   color: var(--text-dim);
   cursor: pointer;
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 6px;
-  transition: border-color .2s, color .2s;
+  transition: border-color 0.2s, color 0.2s;
 }
-.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
-.btn-icon svg   { width: 18px; height: 18px; }
+.btn-icon:hover     { border-color: var(--accent); color: var(--accent); }
+.btn-icon svg       { width: 18px; height: 18px; }
 
-/* ─── Main grid ───────────────────────────────────────────────────────────── */
+/* ─── 5. Main grid layout ─────────────────────────────────────────────────── */
 main {
   display: grid;
   grid-template-columns: 340px 1fr;
@@ -135,23 +151,20 @@ main {
   margin: 0 auto;
 }
 
-@media (max-width: 720px) {
-  main { grid-template-columns: 1fr; }
-}
-
-.col-left, .col-right {
+.col-left,
+.col-right {
   display: flex;
   flex-direction: column;
   gap: var(--gap);
 }
 
-/* ─── Panel ───────────────────────────────────────────────────────────────── */
+/* ─── 6. Panel ────────────────────────────────────────────────────────────── */
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--panel-pad);
-  transition: background .25s, border-color .25s;
+  transition: background 0.25s, border-color 0.25s;
 }
 
 .panel-title {
@@ -166,7 +179,7 @@ main {
   justify-content: space-between;
 }
 
-/* ─── Connection panel ────────────────────────────────────────────────────── */
+/* ─── 7. Connection panel ─────────────────────────────────────────────────── */
 .conn-row {
   display: flex;
   align-items: center;
@@ -178,21 +191,22 @@ main {
 }
 
 .conn-status-dot {
-  width: 10px; height: 10px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--error);
   flex-shrink: 0;
-  transition: background .4s;
+  transition: background 0.4s;
 }
 .conn-status-dot.connected  { background: var(--ok);   animation: pulse-ok 2s infinite; }
-.conn-status-dot.connecting { background: var(--warn); animation: blink .7s step-end infinite; }
+.conn-status-dot.connecting { background: var(--warn); animation: blink 0.7s step-end infinite; }
 
 @keyframes pulse-ok {
   0%   { box-shadow: 0 0 0 0 #1bdb7066; }
   70%  { box-shadow: 0 0 0 6px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
 .conn-addr {
   font-family: 'IBM Plex Mono', monospace;
@@ -217,9 +231,9 @@ input[type="text"] {
   font-size: 12px;
   padding: 8px 12px;
   outline: none;
-  transition: border-color .2s;
+  transition: border-color 0.2s;
 }
-input[type="text"]:focus     { border-color: var(--accent); }
+input[type="text"]:focus       { border-color: var(--accent); }
 input[type="text"]::placeholder { color: var(--text-faint); }
 
 .btn-connect {
@@ -234,11 +248,11 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   padding: 8px 16px;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity .2s;
+  transition: opacity 0.2s;
 }
-.btn-connect:hover { opacity: .85; }
+.btn-connect:hover { opacity: 0.85; }
 
-/* ─── Telemetry ───────────────────────────────────────────────────────────── */
+/* ─── 8. Telemetry ────────────────────────────────────────────────────────── */
 .telem-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -260,14 +274,14 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   font-weight: 600;
   color: var(--text);
   min-height: 20px;
-  transition: color .3s;
+  transition: color 0.3s;
 }
 .telem-value.accent { color: var(--accent); }
 .telem-value.ok     { color: var(--ok); }
 .telem-value.warn   { color: var(--warn); }
 .telem-value.error  { color: var(--error); }
 
-/* ─── Face ────────────────────────────────────────────────────────────────── */
+/* ─── 9. Robot face / status display ─────────────────────────────────────── */
 .face-wrapper {
   display: flex;
   flex-direction: column;
@@ -276,7 +290,8 @@ input[type="text"]::placeholder { color: var(--text-faint); }
 }
 
 .face {
-  width: 100px; height: 80px;
+  width: 100px;
+  height: 80px;
   background: var(--bg-raised);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -285,40 +300,44 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   align-items: center;
   justify-content: center;
   gap: 12px;
-  transition: border-color .4s, background .4s;
+  transition: border-color 0.4s, background 0.4s;
   position: relative;
   overflow: hidden;
 }
 
+/* CRT scanline overlay — purely decorative */
 .face::before {
   content: '';
-  position: absolute; inset: 0;
+  position: absolute;
+  inset: 0;
   background: repeating-linear-gradient(
     to bottom,
     transparent, transparent 3px,
-    rgba(0,0,0,.12) 3px, rgba(0,0,0,.12) 4px
+    rgba(0, 0, 0, 0.12) 3px, rgba(0, 0, 0, 0.12) 4px
   );
   pointer-events: none;
 }
 
+/* Face border colours reflect FSM state */
 .face.ready      { border-color: var(--ok); }
-.face.moving     { border-color: var(--accent); animation: face-moving .6s ease-in-out infinite alternate; }
+.face.moving     { border-color: var(--accent); animation: face-moving 0.6s ease-in-out infinite alternate; }
 .face.safe       { border-color: var(--warn); }
-.face.error      { border-color: var(--error); animation: face-error .4s step-end infinite; }
+.face.error      { border-color: var(--error); animation: face-error 0.4s step-end infinite; }
 .face.offline    { border-color: var(--text-faint); }
 .face.connecting { border-color: var(--warn); animation: face-connecting 1.2s ease-in-out infinite; }
 
 @keyframes face-moving     { from { box-shadow: 0 0 0 0 transparent; } to { box-shadow: 0 0 12px 2px #00e5ff33; } }
-@keyframes face-error      { 0%,100% { border-color: var(--error); } 50% { border-color: var(--text-faint); } }
-@keyframes face-connecting { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes face-error      { 0%, 100% { border-color: var(--error); } 50% { border-color: var(--text-faint); } }
+@keyframes face-connecting { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .face-eyes { display: flex; gap: 18px; }
 
 .eye {
-  width: 12px; height: 12px;
+  width: 12px;
+  height: 12px;
   border-radius: 2px;
   background: var(--text-dim);
-  transition: background .4s, height .2s;
+  transition: background 0.4s, height 0.2s;
 }
 .face.ready      .eye { background: var(--ok); }
 .face.moving     .eye { background: var(--accent); height: 8px; border-radius: 4px; }
@@ -328,16 +347,17 @@ input[type="text"]::placeholder { color: var(--text-faint); }
 .face.offline    .eye { background: var(--text-faint); }
 
 .face-mouth {
-  width: 32px; height: 4px;
+  width: 32px;
+  height: 4px;
   border-radius: 2px;
   background: var(--text-faint);
-  transition: background .4s, border-radius .3s, height .3s;
+  transition: background 0.4s, border-radius 0.3s, height 0.3s;
 }
-.face.ready      .face-mouth { background: var(--ok);    border-radius: 0 0 6px 6px; height: 6px; }
-.face.moving     .face-mouth { background: var(--accent); height: 3px; }
-.face.safe       .face-mouth { background: var(--warn);  border-radius: 6px 6px 0 0; height: 6px; }
-.face.error      .face-mouth { background: var(--error);  height: 3px; }
-.face.connecting .face-mouth { background: var(--warn);   height: 2px; }
+.face.ready      .face-mouth { background: var(--ok);     border-radius: 0 0 6px 6px; height: 6px; }
+.face.moving     .face-mouth { background: var(--accent);  height: 3px; }
+.face.safe       .face-mouth { background: var(--warn);   border-radius: 6px 6px 0 0; height: 6px; }
+.face.error      .face-mouth { background: var(--error);   height: 3px; }
+.face.connecting .face-mouth { background: var(--warn);    height: 2px; }
 
 .face-state-label {
   font-size: 11px;
@@ -347,7 +367,7 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   text-transform: uppercase;
 }
 
-/* ─── D-pad ───────────────────────────────────────────────────────────────── */
+/* ─── 10. D-pad movement controls ────────────────────────────────────────── */
 .dpad-wrapper {
   display: flex;
   flex-direction: column;
@@ -356,43 +376,50 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   padding: 10px 0;
 }
 
-.dpad-row { display: flex; gap: 8px; align-items: center; }
+.dpad-row    { display: flex; gap: 8px; align-items: center; }
 .dpad-spacer { width: 80px; height: 80px; }
 
 .dpad-btn {
-  width: 80px; height: 80px;
+  width: 80px;
+  height: 80px;
   border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--move-bg);
   color: var(--text);
   cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.08em;
-  transition: background .15s, border-color .15s, transform .1s;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
   -webkit-user-select: none;
   user-select: none;
   touch-action: manipulation;
 }
 .dpad-btn svg { width: 28px; height: 28px; }
-.dpad-btn:hover { background: var(--move-hover); border-color: var(--border-hi); }
+.dpad-btn:hover {
+  background: var(--move-hover);
+  border-color: var(--border-hi);
+}
 .dpad-btn:active,
 .dpad-btn.pressed {
   background: var(--move-active);
   border-color: var(--accent);
   color: var(--accent);
-  transform: scale(.94);
+  transform: scale(0.94);
 }
 
+/* STOP button — visually distinct from movement buttons */
 .dpad-btn.stop {
   background: var(--stop-bg);
   border-color: var(--stop-bg);
   color: #fff;
   font-size: 15px;
   letter-spacing: 0.12em;
-  transition: background .15s, box-shadow .2s, transform .1s;
+  transition: background 0.15s, box-shadow 0.2s, transform 0.1s;
 }
 .dpad-btn.stop:hover {
   background: var(--stop-hover);
@@ -400,7 +427,10 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   box-shadow: 0 0 12px 0 #ff1a3c55;
 }
 .dpad-btn.stop:active,
-.dpad-btn.stop.pressed { transform: scale(.92); box-shadow: 0 0 20px 0 #ff1a3c88; }
+.dpad-btn.stop.pressed {
+  transform: scale(0.92);
+  box-shadow: 0 0 20px 0 #ff1a3c88;
+}
 
 .keyboard-hint {
   font-size: 10px;
@@ -410,7 +440,13 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   text-align: center;
 }
 
-/* ─── Log ─────────────────────────────────────────────────────────────────── */
+/* When mode-blocked is active (AUTONOMOUS/SAFE mode), dim D-pad except STOP */
+body.mode-blocked .dpad-btn:not(.stop) {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+/* ─── 11. Event log ───────────────────────────────────────────────────────── */
 .btn-sm {
   background: transparent;
   border: 1px solid var(--border);
@@ -422,7 +458,7 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   letter-spacing: 0.15em;
   padding: 3px 8px;
   cursor: pointer;
-  transition: border-color .2s, color .2s;
+  transition: border-color 0.2s, color 0.2s;
 }
 .btn-sm:hover { border-color: var(--accent2); color: var(--accent2); }
 
@@ -446,25 +482,42 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   padding: 5px 0;
   border-bottom: 1px solid var(--bg-raised);
   font-size: 12px;
-  animation: fade-in .15s ease;
+  animation: fade-in 0.15s ease;
 }
 .log-entry:last-child { border-bottom: none; }
 
 @keyframes fade-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; } }
 
-.log-ts  { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-faint); white-space: nowrap; flex-shrink: 0; }
-.log-msg { color: var(--text); flex: 1; font-weight: 600; letter-spacing: 0.04em; }
+.log-ts  {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.log-msg {
+  color: var(--text);
+  flex: 1;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
 
+/* Log entry colour by category */
 .log-entry.ev-connect  .log-msg { color: var(--ok); }
 .log-entry.ev-command  .log-msg { color: var(--accent); }
 .log-entry.ev-ack      .log-msg { color: var(--text); }
 .log-entry.ev-error    .log-msg { color: var(--error); }
 .log-entry.ev-obstacle .log-msg { color: var(--warn); }
+.log-entry.ev-mode     .log-msg { color: var(--accent2); }
+.log-entry.ev-voice    .log-msg { color: var(--warn); }
+.log-entry.ev-system   .log-msg { color: var(--text-dim); font-style: italic; }
 
-/* ─── Obstacle banner ─────────────────────────────────────────────────────── */
+/* ─── 12. Obstacle banner ─────────────────────────────────────────────────── */
 .obstacle-banner {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: 0;
+  left: 0;
+  right: 0;
   background: var(--warn);
   color: #1a1000;
   font-family: 'IBM Plex Mono', monospace;
@@ -475,25 +528,11 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   padding: 10px;
   z-index: 200;
   transform: translateY(-100%);
-  transition: transform .35s cubic-bezier(.22,1,.36,1);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .obstacle-banner.visible { transform: translateY(0); }
 
-/* ─── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 480px) {
-  :root { --panel-pad: 14px; --gap: 10px; }
-  .dpad-btn    { width: 70px; height: 70px; }
-  .dpad-spacer { width: 70px; height: 70px; }
-  .logo        { font-size: 18px; }
-}
-
-
-/* ══════════════════════════════════════════════════════════════════════════════
-   ADDITIONS — Mode Panel, Voice Panel, Mission Log Panel
-   ══════════════════════════════════════════════════════════════════════════════ */
-
-/* ─── Mode Panel ─────────────────────────────────────────────────────────── */
-
+/* ─── 13. Mode panel ──────────────────────────────────────────────────────── */
 .mode-badge-row {
   display: flex;
   align-items: center;
@@ -512,9 +551,9 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   border-radius: 4px;
   padding: 4px 10px;
   white-space: nowrap;
-  transition: color .3s, border-color .3s;
+  transition: color 0.3s, border-color 0.3s;
 }
-
+/* Mode badge colour reflects active mode */
 .mode-badge.MANUAL     { color: var(--accent);  border-color: var(--accent); }
 .mode-badge.AUTONOMOUS { color: var(--ok);       border-color: var(--ok); }
 .mode-badge.VOICE      { color: var(--warn);     border-color: var(--warn); }
@@ -543,20 +582,18 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   letter-spacing: 0.14em;
   padding: 10px 0;
   cursor: pointer;
-  transition: background .15s, border-color .15s, color .15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-
 .mode-btn:hover {
   border-color: var(--border-hi);
   color: var(--text);
 }
-
 .mode-btn.active {
   background: var(--accent);
   border-color: var(--accent);
   color: #000;
 }
-
+/* SAFE mode button uses error colour to convey the restrictive nature */
 .mode-btn.safe.active,
 .mode-btn.safe:hover {
   background: var(--error);
@@ -564,21 +601,15 @@ input[type="text"]::placeholder { color: var(--text-faint); }
   color: #fff;
 }
 
-body.mode-blocked .dpad-btn:not(.stop) {
-  opacity: 0.35;
-  pointer-events: none;
-}
-
-/* ─── Voice Panel ────────────────────────────────────────────────────────── */
-
+/* ─── 14. Voice panel ─────────────────────────────────────────────────────── */
 .voice-status-label {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
   color: var(--text-faint);
   letter-spacing: 0.12em;
-  transition: color .2s;
+  transition: color 0.2s;
 }
-.voice-status-label.listening { color: var(--warn); animation: blink .7s step-end infinite; }
+.voice-status-label.listening { color: var(--warn); animation: blink 0.7s step-end infinite; }
 .voice-status-label.active    { color: var(--ok); }
 
 .voice-row {
@@ -599,24 +630,17 @@ body.mode-blocked .dpad-btn:not(.stop) {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color .2s, background .2s, color .2s, box-shadow .2s;
+  transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
 }
-
-.voice-btn svg { width: 24px; height: 24px; }
-
-.voice-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+.voice-btn svg   { width: 24px; height: 24px; }
+.voice-btn:hover { border-color: var(--accent); color: var(--accent); }
 
 .voice-btn.listening {
   border-color: var(--warn);
   color: var(--warn);
-  background: var(--bg-raised);
   box-shadow: 0 0 0 4px #ffc23322, 0 0 14px #ffc23344;
   animation: voice-pulse 1s ease-in-out infinite;
 }
-
 .voice-btn.matched {
   border-color: var(--ok);
   color: var(--ok);
@@ -624,8 +648,8 @@ body.mode-blocked .dpad-btn:not(.stop) {
 }
 
 @keyframes voice-pulse {
-  0%,100% { box-shadow: 0 0 0 4px #ffc23322, 0 0 14px #ffc23344; }
-  50%     { box-shadow: 0 0 0 8px #ffc23311, 0 0 22px #ffc23333; }
+  0%, 100% { box-shadow: 0 0 0 4px #ffc23322, 0 0 14px #ffc23344; }
+  50%       { box-shadow: 0 0 0 8px #ffc23311, 0 0 22px #ffc23333; }
 }
 
 .voice-info { flex: 1; min-width: 0; }
@@ -640,7 +664,7 @@ body.mode-blocked .dpad-btn:not(.stop) {
   text-overflow: ellipsis;
   margin-bottom: 5px;
   min-height: 18px;
-  transition: color .2s;
+  transition: color 0.2s;
 }
 .voice-transcript.matched  { color: var(--ok); }
 .voice-transcript.no-match { color: var(--error); }
@@ -658,8 +682,7 @@ body.mode-blocked .dpad-btn:not(.stop) {
   letter-spacing: 0.06em;
 }
 
-/* ─── Mission Log Panel ──────────────────────────────────────────────────── */
-
+/* ─── 15. Mission log panel ───────────────────────────────────────────────── */
 .mission-scroll {
   max-height: 200px;
   overflow-y: auto;
@@ -671,6 +694,14 @@ body.mode-blocked .dpad-btn:not(.stop) {
 .mission-scroll::-webkit-scrollbar-track { background: transparent; }
 .mission-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-.log-entry.ev-mode   .log-msg { color: var(--accent2); }
-.log-entry.ev-voice  .log-msg { color: var(--warn); }
-.log-entry.ev-system .log-msg { color: var(--text-dim); font-style: italic; }
+/* ─── 16. Responsive overrides ────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  main { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  :root        { --panel-pad: 14px; --gap: 10px; }
+  .dpad-btn    { width: 70px; height: 70px; }
+  .dpad-spacer { width: 70px; height: 70px; }
+  .logo        { font-size: 18px; }
+}

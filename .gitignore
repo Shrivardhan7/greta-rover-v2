@@ -1,0 +1,43 @@
+# -----------------------------------------------
+# Greta Rover V2 — .gitignore
+# -----------------------------------------------
+
+# PlatformIO build output
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Arduino IDE temp files
+*.ino.elf
+*.ino.hex
+*.ino.eep
+
+# VS Code workspace settings (keep extensions.json if desired)
+.vscode/
+!.vscode/extensions.json
+
+# Node / JS (if dashboard has a build step)
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+secrets.h
+credentials.h
+
+# Compiled output
+*.o
+*.a
+*.out
