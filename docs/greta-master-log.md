@@ -444,3 +444,63 @@ hardware integration success
 
 end of log
 
+## 06 april 2026
+
+hardware bring-up phase started
+
+mechanical chassis received and inspected
+
+4wd base confirmed compatible with motion architecture
+
+initial assembly planning completed
+
+
+
+development work:
+
+- github pages dashboard link validated
+- repository licensing cleanup started
+- master log duplication issue identified and corrected
+- documentation naming consistency fixes applied
+
+
+
+architecture decisions:
+
+dashboard kept inside docs structure for github pages stability
+
+reason:
+
+static hosting reliability
+
+clean deployment path
+
+
+
+decision:
+
+master log standardized to single source of truth
+
+reason:
+
+avoid documentation drift
+
+maintain engineering traceability
+
+
+
+coding progress:
+
+greta os structure review continued
+
+module boundaries verified
+
+no structural refactors required
+
+
+
+result:
+
+project confirmed ready for hardware integration stage
+
+development remains aligned with modular robotics os vision
