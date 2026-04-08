@@ -22,8 +22,9 @@ Each module lists its layer, its single responsibility, and its public API surfa
 | `command_processor` | 4 — Control | Command validation and dispatch | `command_init()`, `command_receive()`, `command_receive_ack()`, `command_update()` |
 | `motion_manager` | 4 — Control | Actuator output via HAL *(future)* | `motion_init()`, `motion_update()`, `motion_stop()` |
 | `safety_manager` | 4 — Control | E-stop, tilt, current limits *(future)* | `safety_init()`, `safety_update()`, `safety_is_clear()` |
-| `vision_manager` | 5 — Brain | Camera pipeline *(future)* | `vision_init()`, `vision_update()` |
-| `brain_manager` | 5 — Brain | Planning and inference *(future)* | `brain_init()`, `brain_update()` |
+| `face_engine` | 5 — Personality | GRETA Expression System; deterministic expression state derived from `state_manager` and `behavior_manager` | `face_init()`, `face_update()`, `face_on_state_change()`, `face_on_behavior_update()`, `face_sync_from_system()`, `face_current_expression()`, `face_status()` |
+| `vision_manager` | 6 — Brain | Camera pipeline *(future)* | `vision_init()`, `vision_update()` |
+| `brain_manager` | 6 — Brain | Planning and inference *(future)* | `brain_init()`, `brain_update()` |
 
 ---
 
@@ -58,7 +59,13 @@ Dependencies flow downward only. A module may depend on modules in lower-numbere
 | `motion_manager` | `state_manager`, `safety_manager`, HAL (`pwm_hal`, `gpio_hal`) |
 | `safety_manager` | `state_manager`, `event_bus`, HAL (`adc_hal`, `gpio_hal`) |
 
-### Brain Modules (Layer 5)
+### Personality Modules (Layer 5)
+
+| Module | May depend on |
+|---|---|
+| `face_engine` | `state_manager`, `behavior_manager`, `event_bus` |
+
+### Brain Modules (Layer 6)
 
 | Module | May depend on |
 |---|---|
@@ -73,14 +80,15 @@ The following dependencies are **strictly prohibited**. A pull request introduci
 
 | Forbidden | Reason |
 |---|---|
-| Any Layer 3–5 module `#include`ing another Layer 3–5 module directly | Breaks modularity; use event bus |
+| Any Layer 3–6 module `#include`ing another Layer 3–6 module directly | Breaks modularity; use event bus |
 | `command_processor` calling `motion_manager` directly | Control coupling; must go via event bus or HAL abstraction |
 | `network_manager` `#include`ing `command_processor` | Network layer must not know about control layer |
 | `brain_manager` writing to HAL directly | Brain layer must not own hardware; route through motion_manager |
+| Personality modules influencing mode, safety, task, or motion decisions | Personality layer is deterministic and read-only; it may observe system truth but must not control robot behavior or introduce control-loop timing dependencies |
 | Any module calling `delay()` | Blocks cooperative scheduler |
 | Any module calling `digitalWrite()`, `analogWrite()` directly (except HAL) | Bypasses hardware abstraction |
 | `state_manager` issuing motor commands | Kernel must not own actuators |
-| `scheduler` depending on any Layer 3–5 module | Kernel must not know about application modules |
+| `scheduler` depending on any Layer 3–6 module | Kernel must not know about application modules |
 
 ---
 
@@ -118,3 +126,6 @@ The following dependencies are **strictly prohibited**. A pull request introduci
 ```
 
 All arrows represent allowed data flow directions. The event bus is the horizontal integration plane — it carries notifications between modules at the same layer without creating import dependencies.
+
+
+

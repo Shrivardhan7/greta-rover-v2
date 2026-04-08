@@ -178,3 +178,23 @@ Modules do not call each other directly across layers. The event bus carries not
 | 4 | `brain_manager` | Subscribes to vision events; issues commands via command bus |
 | 5 | Dual-core split | Pin scheduler to Core 1; pin vision/brain to Core 0 via RTOS tasks |
 | 5 | `ota_manager` | Registers at 500 ms; safe only in `STATE_READY` |
+
+---
+
+## 8. Control Architecture Update
+
+The current firmware control path now includes three explicit coordination modules:
+
+| Module | Responsibility |
+|---|---|
+| `mode_manager` | Owns `IDLE`, `MANUAL`, `AUTONOMOUS`, `SAFE`, and `ERROR` operating modes |
+| `task_manager` | Tracks active task ownership, interruptions, and deterministic task priority |
+| `behavior_manager` | Resolves command admission, safety override, link recovery, and mode/task arbitration |
+
+The runtime hierarchy is:
+
+`scheduler -> state_manager -> behavior_manager -> command_processor`
+
+Safety response flow is:
+
+`health_manager` or link/watchdog fault -> `behavior_manager` forces `SAFE` -> `state_manager` records the transition reason -> scheduler continues only the cooperative runtime needed for recovery and telemetry.

@@ -1,6 +1,7 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -26,6 +27,7 @@
 
 // ── Platform ─────────────────────────────────────────────────────────────────
 #include <Arduino.h>
+#include <string.h>
 
 // ── Greta OS Core ─────────────────────────────────────────────────────────────
 #include "scheduler.h"        // Cooperative task scheduler
@@ -40,6 +42,8 @@
 #include "bluetooth_bridge.h" // UART bridge to Arduino motor controller
 #include "telemetry.h"        // JSON telemetry broadcast to dashboard
 #include "mode_manager.h"     // Rover operating mode (MANUAL / AUTONOMOUS / SAFE)
+#include "task_manager.h"     // Lightweight task lifecycle registry
+#include "behavior_manager.h" // Deterministic arbitration and safety policy
 
 // ── Future Module Hooks (not yet implemented) ─────────────────────────────────
 // Uncomment each block when the module is ready.
@@ -61,6 +65,10 @@
 // Keeping this adapter here means network_manager does not need to know
 // that command_processor exists.
 static void on_dashboard_command(const char* cmd) {
+    if (cmd && strncmp(cmd, "MODE ", 5) == 0) {
+        behavior_handle_mode_request(cmd + 5);
+        return;
+    }
     command_receive(cmd);
 }
 
@@ -132,18 +140,21 @@ void setup() {
     //   scheduler_init — times all subsequent tasks.
     //   health_manager — runs on top of scheduler timing.
 
+    event_bus_init();
+
     state_init();
     state_set(STATE_CONNECTING, "boot");
 
     bluetooth_init();
     command_init();
     mode_init();
+    task_manager_init();
+    behavior_manager_init();
     telemetry_init();
 
     network_set_command_callback(on_dashboard_command);
     network_init();
 
-    event_bus_init();
     scheduler_init();
     health_manager_init();
 
@@ -163,21 +174,25 @@ void loop() {
 
     // 1. Scheduler — runs registered tasks at their configured intervals.
     //    Tasks that are not due this tick return immediately via scheduler_due().
+    if (scheduler_due(TASK_HEALTH))     health_manager_update();
     if (scheduler_due(TASK_STATE_GATE)) state_update();
-    if (scheduler_due(TASK_COMMAND))    command_update();
+    if (scheduler_due(TASK_COMMAND)) {
+        mode_update();
+        behavior_manager_update();
+        command_update();
+        task_manager_update();
+    }
     if (scheduler_due(TASK_NETWORK))    network_update();
 
     // bluetooth_update must run before bluetooth_ack_drain in the same tick.
     if (scheduler_due(TASK_BLUETOOTH))  bluetooth_update();
 
     if (scheduler_due(TASK_TELEMETRY))  telemetry_update();
-    if (scheduler_due(TASK_HEALTH))     health_manager_update();
 
     // 2. BT ACK drain — inline after bluetooth_update() for this tick.
     bluetooth_ack_drain();
 
     // 3. Link recovery — runs every loop() iteration, not scheduler-gated.
-    link_recovery_update();
 
     // Scheduler timing measurement — call at the end of each loop iteration.
     scheduler_tick();

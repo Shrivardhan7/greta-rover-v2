@@ -1,6 +1,7 @@
 // =============================================================================
 //  Greta Rover OS
 //  Copyright (c) 2026 Shrivardhan Jadhav
+//  SPDX-License-Identifier: Apache-2.0
 //  Licensed under Apache License 2.0
 // =============================================================================
 //
@@ -226,10 +227,9 @@ static int16_t ultrasonic_read_cm() {
 //  validating commands before sending them.
 
 static void process_command(const char* cmd) {
-    _lastCmdMs = millis();  // Refresh watchdog timer on every valid command
-
     // STOP is unconditional — always honoured
     if (strcmp(cmd, CMD_STOP) == 0) {
+        _lastCmdMs = millis();
         motors_stop();
         Serial.println(ACK_STOP);
         return;
@@ -241,11 +241,37 @@ static void process_command(const char* cmd) {
         return;
     }
 
-    if      (strcmp(cmd, CMD_FORWARD)  == 0) { motors_forward();  Serial.println(ACK_FORWARD);  }
-    else if (strcmp(cmd, CMD_BACKWARD) == 0) { motors_backward(); Serial.println(ACK_BACKWARD); }
-    else if (strcmp(cmd, CMD_LEFT)     == 0) { motors_left();     Serial.println(ACK_LEFT);     }
-    else if (strcmp(cmd, CMD_RIGHT)    == 0) { motors_right();    Serial.println(ACK_RIGHT);    }
-    // Unrecognised commands are silently dropped
+    if (strcmp(cmd, CMD_FORWARD) == 0) {
+        _lastCmdMs = millis();
+        motors_forward();
+        Serial.println(ACK_FORWARD);
+        return;
+    }
+
+    if (strcmp(cmd, CMD_BACKWARD) == 0) {
+        _lastCmdMs = millis();
+        motors_backward();
+        Serial.println(ACK_BACKWARD);
+        return;
+    }
+
+    if (strcmp(cmd, CMD_LEFT) == 0) {
+        _lastCmdMs = millis();
+        motors_left();
+        Serial.println(ACK_LEFT);
+        return;
+    }
+
+    if (strcmp(cmd, CMD_RIGHT) == 0) {
+        _lastCmdMs = millis();
+        motors_right();
+        Serial.println(ACK_RIGHT);
+        return;
+    }
+
+    // Any invalid command is treated conservatively as a stop condition.
+    motors_stop();
+    Serial.println(ACK_STOP);
 }
 
 

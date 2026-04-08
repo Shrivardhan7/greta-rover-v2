@@ -1,6 +1,7 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -28,8 +29,8 @@
 // ============================================================================
 
 #include "bluetooth_bridge.h"
+#include "behavior_manager.h"
 #include "config.h"
-#include "state_manager.h"
 #include <HardwareSerial.h>
 #include <Arduino.h>
 
@@ -101,7 +102,7 @@ void bluetooth_update() {
         if (silence >= BT_SILENCE_TIMEOUT_MS) {
             _connected = false;
             Serial.printf("[BT] Link LOST (silent for %lu ms) → SAFE\n", silence);
-            state_set(STATE_SAFE, "BT silence timeout");
+            behavior_force_safe("BT silence timeout");
         }
     }
 }

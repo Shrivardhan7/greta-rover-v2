@@ -1,61 +1,63 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
 
 #pragma once
 // ============================================================================
-//  face_engine.h  —  Greta V2  (STUB — interface defined, driver TBD)
+//  face_engine.h  -  GRETA Expression System  (STUB - interface only)
 //
-//  The face engine sits on top of a display driver abstraction (face_display.h).
-//  The face engine knows expressions; the driver knows pixels.
-//  Swapping OLED for LCD or a colour TFT only requires a new driver —
-//  the expression logic above it is unchanged.
+//  This module is part of Greta's behavior and personality layer.
+//  It does not own pixels, displays, graphics libraries, or rendering policy.
+//  It only resolves Greta's current expression state from system truth.
 //
-//  Expressions are driven by FSM state transitions, not by command strings,
-//  so the face always reflects actual system state, not last received command.
+//  Expression authority:
+//    - state_manager provides the authoritative robot state
+//    - behavior_manager provides decision and safety intent
+//    - face_engine translates that combined system condition into a
+//      deterministic Greta expression
 //
-//  Hardware target: OLED (SSD1306) or colour TFT (ST7735 / ILI9341).
-//  Implementation: pending display driver selection.
+//  This keeps expression output aligned with actual GRETA OS behavior rather
+//  than raw commands or transport events. The module is intentionally Greta-
+//  specific and is not a generic display abstraction.
+//
+//  Rendering remains a downstream concern and is intentionally excluded here.
 // ============================================================================
 
 #include <Arduino.h>
-#include "state_manager.h"   // For RobotState — ensures type consistency
+#include "state_manager.h"
 
-// ── Expression set ────────────────────────────────────────────────────────────
-enum FaceExpression : uint8_t {
-    FACE_OFFLINE  = 0,
-    FACE_BOOT     = 1,
-    FACE_READY    = 2,
-    FACE_MOVING   = 3,
-    FACE_SAFE     = 4,
-    FACE_ERROR    = 5,
-    FACE_THINKING = 6,    // Future: AI processing indicator
-    FACE_COUNT    = 7
+// Greta expression states are compact, deterministic, and derived from
+// the current control and safety condition of the robot.
+enum GretaExpression : uint8_t {
+    GRETA_EXPRESSION_OFFLINE = 0,
+    GRETA_EXPRESSION_BOOT    = 1,
+    GRETA_EXPRESSION_READY   = 2,
+    GRETA_EXPRESSION_ACTIVE  = 3,
+    GRETA_EXPRESSION_SAFE    = 4,
+    GRETA_EXPRESSION_ERROR   = 5,
+    GRETA_EXPRESSION_ALERT   = 6,
+    GRETA_EXPRESSION_COUNT   = 7
 };
 
-// ── Eye colour palette ────────────────────────────────────────────────────────
-enum EyeColor : uint8_t {
-    EYE_WHITE    = 0,
-    EYE_CYAN     = 1,
-    EYE_BLUE     = 2,
-    EYE_GREEN    = 3,
-    EYE_PURPLE   = 4,
-    EYE_LAVENDER = 5,
-    EYE_AMBER    = 6,   // Used for SAFE state
-    EYE_RED      = 7,   // Used for ERROR state
-};
+typedef struct {
+    GretaExpression active;
+    RobotState      source_state;
+    bool            safety_latched;
+} GretaExpressionStatus;
 
-// ── Lifecycle ─────────────────────────────────────────────────────────────────
-void face_init();
-void face_update();    // Animation tick — call every loop()
+// Lifecycle
+void face_init(void);
+void face_update(void);    // Non-blocking expression tick
 
-// ── Control ───────────────────────────────────────────────────────────────────
-void face_set_expression(FaceExpression expr);
-void face_set_eye_color(EyeColor color);
+// System-driven expression observers
+void face_on_state_change(RobotState prev_state, RobotState new_state);
+void face_on_behavior_update(void);
+void face_sync_from_system(void);
 
-// Called on FSM state transitions — auto-maps RobotState → FaceExpression.
-// Register this as a callback from main.cpp after face_init().
-void face_on_state_change(RobotState prevState, RobotState newState);
+// Status
+GretaExpression       face_current_expression(void);
+GretaExpressionStatus face_status(void);

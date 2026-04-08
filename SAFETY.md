@@ -1,6 +1,8 @@
-# SAFETY.md – Greta Rover V2
+# safety.md – Greta Rover V2
 
 This document outlines basic safety guidelines for developing, testing, and operating the Greta V2 rover platform.
+
+See also: [First Motor Bring-Up Procedure](docs/first_motor_bringup.md)
 
 ---
 
@@ -76,3 +78,4 @@ Always exercise proper engineering judgement when operating physical hardware.
 ---
 
 *Last updated: 2026*
+

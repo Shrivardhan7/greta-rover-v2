@@ -585,3 +585,136 @@ Sensor integration phase start
 Dashboard connectivity testing
 Status
 Greta V2 architecture stabilization in progress.
+
+# GRETA OS – Development Log
+
+## Date
+
+7 April 2026
+
+## Phase
+
+Architecture Stabilization → Hardware Bring-Up Preparation
+
+## Summary
+
+Completed major architecture cleanup and safety hardening for GRETA OS. System now prepared for controlled first motor testing with deterministic motion authority and documented control flow.
+
+## Major Achievements
+
+### Architecture stabilization
+
+* Enforced single motion authority path:
+
+  command → behavior → task → motion
+
+* Removed direct motion dispatch from command layer
+
+* Centralized SAFE handling through behavior_manager
+
+* Verified task_manager as execution chokepoint
+
+### Safety improvements
+
+* STOP priority verified across system
+* Arduino motion layer hardened:
+
+  * STOP on boot
+  * STOP on invalid command
+  * STOP on communication timeout
+* SAFE transition now triggers immediate stop request
+* Health faults routed through behavior layer
+
+### Personality layer definition
+
+* Refactored face_engine into GRETA Expression System
+* Defined personality modules as:
+
+  * read-only observers
+  * deterministic
+  * non-blocking
+  * outside safety path
+
+Added DR-16:
+Personality modules must not influence motion, safety, mode, or task decisions.
+
+### Documentation improvements
+
+Created/updated:
+
+control_flow.md
+first_motor_bringup.md
+greta-module-map.md
+design-rules.md
+
+Defined:
+
+* control hierarchy
+* module layers
+* dependency rules
+* safety authority structure
+
+### Integration readiness
+
+GRETA OS now considered:
+
+Architecturally safe for controlled first motor testing
+
+Remaining risks are hardware validation only.
+
+## Current System State
+
+Architecture: Stable
+Integration: Ready for hardware validation
+Safety: Enforced by design
+Documentation: Engineering reference level
+
+## Known Remaining Risks
+
+* Compile verification pending (PlatformIO local build)
+* Real motor stopping distance unknown
+* Serial latency not yet measured
+* Arduino timeout tuning may be needed after testing
+* Power noise behavior unknown
+
+## Next Phase
+
+Hardware bring-up preparation.
+
+Immediate next milestones:
+
+1 Compile firmware locally
+2 ESP32 + Arduino communication verification
+3 First controlled motor pulse test
+4 STOP reaction timing validation
+5 SAFE mode hardware validation
+
+## Engineering Rules Entering Hardware Phase
+
+No new architecture changes.
+No new modules.
+Only:
+
+Bug fixes
+Safety fixes
+Integration fixes
+
+Focus shifts from design → validation.
+
+## Development Philosophy
+
+GRETA OS is being developed as a platform architecture, not a feature-driven robot project.
+
+Priority order:
+
+Safety
+Determinism
+Integration stability
+Hardware validation
+Features (later)
+
+## Status
+
+GRETA V2 software foundation considered stable.
+System ready for first controlled hardware motion testing.
+

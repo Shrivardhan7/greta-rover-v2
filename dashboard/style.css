@@ -2,7 +2,7 @@
 Greta Rover OS
 Copyright (c) 2026 Shrivardhan Jadhav
 SPDX-License-Identifier: Apache-2.0
-Licensed under Apache License Version 2.0
+Licensed under Apache License 2.0
 */
 /* ══════════════════════════════════════════════════════════════════════════════
    GRETA V2 — Dashboard Styles
@@ -59,7 +59,7 @@ Licensed under Apache License Version 2.0
 }
 
 /* Light theme — toggled via body.light class */
-.light {
+body.theme-greta-light {
   --bg:          #f0f2f5;
   --bg-panel:    #ffffff;
   --bg-raised:   #e8eaee;
@@ -560,10 +560,11 @@ body.mode-blocked .dpad-btn:not(.stop) {
   transition: color 0.3s, border-color 0.3s;
 }
 /* Mode badge colour reflects active mode */
-.mode-badge.MANUAL     { color: var(--accent);  border-color: var(--accent); }
+.mode-badge.IDLE       { color: var(--text-dim); border-color: var(--border-hi); }
+.mode-badge.MANUAL     { color: var(--accent);   border-color: var(--accent); }
 .mode-badge.AUTONOMOUS { color: var(--ok);       border-color: var(--ok); }
-.mode-badge.VOICE      { color: var(--warn);     border-color: var(--warn); }
 .mode-badge.SAFE       { color: var(--error);    border-color: var(--error); }
+.mode-badge.ERROR      { color: var(--error);    border-color: var(--error); }
 
 .mode-desc {
   font-size: 11px;

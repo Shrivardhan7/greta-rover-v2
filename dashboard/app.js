@@ -1,5 +1,6 @@
 // Greta Rover OS
 // Copyright (c) 2026 Shrivardhan Jadhav
+// SPDX-License-Identifier: Apache-2.0
 // Licensed under Apache License 2.0
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -36,6 +37,33 @@ const CFG = Object.freeze({
   ESTOP_ON_BLUR:    true,           // send ESTOP when tab loses focus
 });
 
+const STORAGE_KEYS = Object.freeze({
+  HOST:  'greta_host',
+  THEME: 'greta_theme',
+});
+
+const THEMES = Object.freeze({
+  DARK:     'Greta Dark',
+  LIGHT:    'Greta Light',
+  ADAPTIVE: 'Greta Adaptive',
+});
+
+const THEME_SEQUENCE = Object.freeze([
+  THEMES.DARK,
+  THEMES.LIGHT,
+  THEMES.ADAPTIVE,
+]);
+
+const THEME_CLASSES = Object.freeze([
+  'theme-greta-dark',
+  'theme-greta-light',
+]);
+
+const THEME_META_COLORS = Object.freeze({
+  [THEMES.DARK]:  '#0a0c10',
+  [THEMES.LIGHT]: '#f0f2f5',
+});
+
 // ─── WebSocket state ──────────────────────────────────────────────────────────
 let _ws             = null;
 let _wsConnected    = false;
@@ -46,6 +74,9 @@ let _manualHost     = '';           // last host entered by user; overrides DEFA
 let _obstacleTimer = null;
 let _logEntries    = [];
 let _robotState    = 'OFFLINE';
+let _themeChoice   = THEMES.DARK;
+let _themeQuery    = null;
+let _lastFaceClass = 'offline';
 
 // ─── DOM refs — resolved once at init to avoid repeated getElementById calls ──
 let dom = {};
@@ -72,15 +103,87 @@ function _resolve_dom() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function theme_toggle() {
-  const isDark = document.body.classList.contains('dark');
-  document.body.classList.toggle('dark',  !isDark);
-  document.body.classList.toggle('light',  isDark);
-  localStorage.setItem('greta_theme', isDark ? 'light' : 'dark');
+  const idx = THEME_SEQUENCE.indexOf(_themeChoice);
+  const nextIdx = idx === -1 ? 0 : (idx + 1) % THEME_SEQUENCE.length;
+  theme_apply(THEME_SEQUENCE[nextIdx]);
 }
 
-function theme_apply() {
-  const saved = localStorage.getItem('greta_theme') || 'dark';
-  document.body.className = saved;
+function _storage_get(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (_) {
+    return null;
+  }
+}
+
+function _storage_set(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (_) {
+    // Storage may be unavailable in privacy-restricted contexts.
+  }
+}
+
+function _theme_normalize(raw) {
+  switch (raw) {
+    case 'dark':
+    case THEMES.DARK:
+      return THEMES.DARK;
+    case 'light':
+    case THEMES.LIGHT:
+      return THEMES.LIGHT;
+    case 'adaptive':
+    case THEMES.ADAPTIVE:
+      return THEMES.ADAPTIVE;
+    default:
+      return THEMES.DARK;
+  }
+}
+
+function _theme_resolve(choice) {
+  if (choice !== THEMES.ADAPTIVE || !_themeQuery) return choice;
+  return _themeQuery.matches ? THEMES.DARK : THEMES.LIGHT;
+}
+
+function _theme_class_name(choice) {
+  return choice === THEMES.LIGHT ? 'theme-greta-light' : 'theme-greta-dark';
+}
+
+function theme_apply(choice) {
+  _themeChoice = _theme_normalize(choice || _themeChoice);
+
+  const resolvedTheme = _theme_resolve(_themeChoice);
+  document.body.classList.remove(...THEME_CLASSES);
+  document.body.classList.add(_theme_class_name(resolvedTheme));
+  document.body.dataset.themeChoice = _themeChoice;
+
+  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+  if (metaThemeColor) {
+    metaThemeColor.setAttribute('content', THEME_META_COLORS[resolvedTheme]);
+  }
+
+  _storage_set(STORAGE_KEYS.THEME, _themeChoice);
+}
+
+function theme_restore() {
+  theme_apply(_storage_get(STORAGE_KEYS.THEME));
+}
+
+function theme_bind_system() {
+  if (!window.matchMedia) return;
+
+  _themeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const onThemeChange = () => {
+    if (_themeChoice === THEMES.ADAPTIVE) {
+      theme_apply(_themeChoice);
+    }
+  };
+
+  if (typeof _themeQuery.addEventListener === 'function') {
+    _themeQuery.addEventListener('change', onThemeChange);
+  } else if (typeof _themeQuery.addListener === 'function') {
+    _themeQuery.addListener(onThemeChange);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -110,6 +213,7 @@ function ws_connect() {
     log_add('WebSocket connected', 'ev-connect');
     clearTimeout(_reconnectTimer);
     _reconnectTimer = null;
+    if (typeof cmd_send === 'function') cmd_send('STOP', dom.btnStop);
   };
 
   // Route all inbound messages through ws_on_message.
@@ -161,7 +265,10 @@ function ws_send(msg) {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function ws_on_message(raw) {
+  if (typeof raw !== 'string') return;
+
   const text = raw.trim();
+  if (!text) return;
 
   if (text.startsWith('{')) {
     try {
@@ -245,8 +352,12 @@ function telem_update(d) {
 function _set_text(id, text, colorClass) {
   const el = dom[id];
   if (!el) return;
-  el.textContent = text;
-  el.className   = 'telem-value' + (colorClass ? ` ${colorClass}` : '');
+
+  const nextText = String(text);
+  const nextClass = 'telem-value' + (colorClass ? ` ${colorClass}` : '');
+
+  if (el.textContent !== nextText) el.textContent = nextText;
+  if (el.className !== nextClass) el.className = nextClass;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -261,9 +372,6 @@ const FACE_STATES = ['ready', 'moving', 'safe', 'error', 'offline', 'connecting'
 function face_set(state) {
   if (!dom.robotFace) return;
 
-  dom.robotFace.classList.remove(...FACE_STATES);
-  if (dom.faceStateLabel) dom.faceStateLabel.textContent = state;
-
   // Map FSM state name → CSS class
   const stateClassMap = {
     'READY':      'ready',
@@ -273,8 +381,18 @@ function face_set(state) {
     'CONNECTING': 'connecting',
   };
 
-  const cssClass = stateClassMap[state] || 'offline';
+  const nextState = state || 'OFFLINE';
+  const cssClass = stateClassMap[nextState] || 'offline';
+
+  if (dom.faceStateLabel && dom.faceStateLabel.textContent !== nextState) {
+    dom.faceStateLabel.textContent = nextState;
+  }
+
+  if (_lastFaceClass === cssClass && dom.robotFace.classList.contains(cssClass)) return;
+
+  dom.robotFace.classList.remove(...FACE_STATES);
   dom.robotFace.classList.add(cssClass);
+  _lastFaceClass = cssClass;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -284,12 +402,15 @@ function face_set(state) {
 // cmd_send — global so mode_manager.js can wrap it to enforce mode gating.
 // STOP and ESTOP always bypass mode gating (handled in mode_manager).
 function cmd_send(cmd, btnEl) {
+  if (!cmd) return false;
+
   if (!ws_send(cmd)) {
     log_add('Not connected — command dropped', 'ev-error');
-    return;
+    return false;
   }
   log_add(cmd, 'ev-command');
   _btn_flash(btnEl);
+  return true;
 }
 
 function _btn_flash(btnEl) {
@@ -429,10 +550,11 @@ function log_render() {
 
 function init() {
   _resolve_dom();
-  theme_apply();
+  theme_bind_system();
+  theme_restore();
 
   // Restore last-used host so the operator does not need to retype it
-  const savedHost = localStorage.getItem('greta_host');
+  const savedHost = _storage_get(STORAGE_KEYS.HOST);
   if (savedHost && dom.ipInput) dom.ipInput.value = savedHost;
 
   // Theme toggle button
@@ -446,7 +568,7 @@ function init() {
       const h = dom.ipInput ? dom.ipInput.value.trim() : '';
       if (h) {
         _manualHost = h;
-        localStorage.setItem('greta_host', h);
+        _storage_set(STORAGE_KEYS.HOST, h);
       }
       clearTimeout(_reconnectTimer);
       ws_connect();

@@ -1,5 +1,6 @@
 // Greta Rover OS
 // Copyright (c) 2026 Shrivardhan Jadhav
+// SPDX-License-Identifier: Apache-2.0
 // Licensed under Apache License 2.0
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -7,7 +8,7 @@
 //  Browser microphone → robot commands via Web Speech API
 //
 //  Load order: AFTER mode_manager.js
-//  Dependencies: ws_send, log_add (app.js), mode_get (mode_manager.js)
+//  Dependencies: cmd_send, log_add (app.js), mode_get (mode_manager.js)
 //
 //  Design:
 //    Push-to-listen model — user taps the mic button to start recognition.
@@ -15,7 +16,7 @@
 //    recognition and battery drain on mobile.
 //    Commands are matched against VOICE_MAP using substring matching.
 //    Matched command is sent immediately on interim results for low latency.
-//    Only active when mode is VOICE (also enforced by mode_manager cmd_send gate).
+//    Only active when rover mode is MANUAL.
 //
 //  Browser support:
 //    Chrome / Edge desktop:       full support
@@ -34,7 +35,7 @@
 'use strict';
 
 // ─── Voice command map ────────────────────────────────────────────────────────
-// Each entry: [ triggerWords[], wsCommand ]
+// Each entry: [ triggerWords[], dashboardCommand ]
 // Evaluated in order — put more specific phrases before generic ones.
 const VOICE_MAP = [
   [['move forward', 'go forward', 'forward', 'ahead', 'go'],  'MOVE F'],
@@ -45,7 +46,7 @@ const VOICE_MAP = [
   [['stop', 'halt', 'brake', 'pause'],                        'STOP'],
 ];
 
-// D-pad button IDs to flash on voice match — visual feedback for the operator
+// D-pad button IDs resolved so cmd_send can reuse the shared button feedback path.
 const CMD_BUTTON_MAP = {
   'MOVE F': 'btnF',
   'MOVE B': 'btnB',
@@ -113,19 +114,29 @@ function _build_recognition(SpeechRecognition) {
 function voice_toggle() {
   if (!_supported) return;
 
-  // Guard: voice recognition is only meaningful in VOICE mode
-  if (typeof mode_get === 'function' && mode_get() !== 'VOICE') {
+  // Guard: voice recognition is only meaningful in MANUAL mode
+  if (typeof mode_get === 'function' && mode_get() !== 'MANUAL') {
+    _transcript_set('Switch to MANUAL mode to use microphone', 'no-match');
     if (typeof log_add === 'function') {
-      log_add('Switch to VOICE mode to use microphone', 'ev-error');
+      log_add('Switch to MANUAL mode to use microphone', 'ev-error');
     }
     return;
   }
 
   if (_isListening) {
-    _recognition.stop();
+    try {
+      _recognition.stop();
+    } catch (_) {}
   } else {
     _transcript_set('Listening…', '');
-    _recognition.start();
+    try {
+      _recognition.start();
+    } catch (err) {
+      const msg = err && err.message ? `Voice error: ${err.message}` : 'Voice start failed';
+      _set_status('INACTIVE', false);
+      _transcript_set(msg, 'no-match');
+      if (typeof log_add === 'function') log_add(msg, 'ev-error');
+    }
   }
 }
 
@@ -192,21 +203,17 @@ function _match_command(text) {
 function _execute_voice_command(cmd, transcript) {
   _transcript_set(transcript, 'matched');
 
-  if (typeof ws_send === 'function') ws_send(cmd);
+  const btnId = CMD_BUTTON_MAP[cmd];
+  const btn = btnId ? document.getElementById(btnId) : null;
+  const sent = (typeof cmd_send === 'function') ? cmd_send(cmd, btn) : false;
+  if (!sent) {
+    _transcript_set('Command not sent', 'no-match');
+    return;
+  }
 
   const logMsg = `Voice: "${transcript}" → ${cmd}`;
   if (typeof log_add         === 'function') log_add(logMsg, 'ev-voice');
   if (typeof mission_log_add === 'function') mission_log_add(logMsg, 'ev-voice');
-
-  // Flash the corresponding D-pad button for visual confirmation
-  const btnId = CMD_BUTTON_MAP[cmd];
-  if (btnId) {
-    const btn = document.getElementById(btnId);
-    if (btn) {
-      btn.classList.add('pressed');
-      setTimeout(() => btn.classList.remove('pressed'), 300);
-    }
-  }
 
   // Reset transcript display after a short pause
   clearTimeout(_resetTimer);
@@ -218,14 +225,22 @@ function _execute_voice_command(cmd, transcript) {
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 function _transcript_set(text, cssClass) {
   if (!_voiceTranscript) return;
-  _voiceTranscript.textContent = text;
-  _voiceTranscript.className   = 'voice-transcript' + (cssClass ? ` ${cssClass}` : '');
+
+  const nextText = String(text);
+  const nextClass = 'voice-transcript' + (cssClass ? ` ${cssClass}` : '');
+
+  if (_voiceTranscript.textContent !== nextText) _voiceTranscript.textContent = nextText;
+  if (_voiceTranscript.className !== nextClass) _voiceTranscript.className = nextClass;
 }
 
 function _set_status(label, isListening) {
   if (!_voiceStatus) return;
-  _voiceStatus.textContent = label;
-  _voiceStatus.className   = 'voice-status-label' + (isListening ? ' listening' : '');
+
+  const nextLabel = String(label);
+  const nextClass = 'voice-status-label' + (isListening ? ' listening' : '');
+
+  if (_voiceStatus.textContent !== nextLabel) _voiceStatus.textContent = nextLabel;
+  if (_voiceStatus.className !== nextClass) _voiceStatus.className = nextClass;
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────

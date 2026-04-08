@@ -23,6 +23,7 @@
 | DR-13 | No `Serial.print` in `_update()` on the hot path | Performance |
 | DR-14 | No magic numbers — all constants in `config.h` | Maintainability |
 | DR-15 | Compiler warnings treated as errors | Quality |
+| DR-16 | Personality modules are deterministic read-only observers | Architecture |
 
 ---
 
@@ -213,3 +214,23 @@ scheduler_add_task(network_update, TASK_INTERVAL_CRITICAL_MS);
 **Rationale:** Warnings on embedded systems frequently indicate real bugs — unused variables that shadow intended ones, implicit casts that truncate values, signed/unsigned mismatches that cause incorrect comparisons.
 
 **Process:** A PR that introduces new warnings is blocked until the warning is resolved, not suppressed with `#pragma GCC diagnostic`.
+
+---
+
+## DR-16 â€” Personality modules are deterministic read-only observers
+
+**Rule:** Personality-layer modules, including `face_engine`, may observe `state_manager`, `behavior_manager`, and event bus notifications, but they must remain deterministic, must not influence safety, mode, task, or motion decisions, and must not introduce timing dependencies into the control loop.
+
+**Rationale:** Personality output must reflect GRETA OS system truth, not participate in control authority. If a personality module can affect motion, safety state, or control-loop timing, a non-critical expression subsystem becomes part of the robot's safety path.
+
+**Permitted:**
+- Reading `state_get()` and other read-only status APIs.
+- Observing behavior or fault changes through the event bus.
+- Publishing non-authoritative telemetry or presentation events.
+- Performing bounded, non-blocking updates that do not alter scheduler timing assumptions.
+
+**Not permitted:**
+- Calling `behavior_dispatch_command()`, `behavior_force_safe()`, or other behavior-control APIs.
+- Requesting mode changes, task activation, or motion dispatch.
+- Writing actuator, safety, or command state directly or indirectly.
+- Blocking, delaying, sleeping, or adding feedback paths that control modules depend on for correct timing.

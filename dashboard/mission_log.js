@@ -1,5 +1,6 @@
 // Greta Rover OS
 // Copyright (c) 2026 Shrivardhan Jadhav
+// SPDX-License-Identifier: Apache-2.0
 // Licensed under Apache License 2.0
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -34,14 +35,17 @@
 const MISSION_LOG_MAX     = 100;
 const MISSION_STORAGE_KEY = 'greta_mission_log';
 
-// Event log categories that are significant enough to appear in the mission log.
-// Routine ACKs (ev-ack) are intentionally excluded.
+// Event log categories that are significant enough to mirror here.
+// Mode and voice entries are added directly by their owning modules so they
+// only appear once the action is actually accepted or matched.
 const MISSION_CATEGORIES = new Set([
-  'ev-command', 'ev-obstacle', 'ev-error', 'ev-connect', 'ev-mode', 'ev-voice',
+  'ev-command', 'ev-obstacle', 'ev-error', 'ev-connect',
 ]);
 
 // ─── State ────────────────────────────────────────────────────────────────────
 let _missionEntries = [];
+let _missionScroll  = null;
+let _missionEmpty   = null;
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -102,17 +106,15 @@ function _mission_restore() {
 
 // ─── Render ───────────────────────────────────────────────────────────────────
 function _mission_render() {
-  const scroll = document.getElementById('missionScroll');
-  const empty  = document.getElementById('missionEmpty');
-  if (!scroll) return;
+  if (!_missionScroll) return;
 
-  scroll.querySelectorAll('.log-entry').forEach(el => el.remove());
+  _missionScroll.querySelectorAll('.log-entry').forEach(el => el.remove());
 
   if (_missionEntries.length === 0) {
-    if (empty) empty.style.display = '';
+    if (_missionEmpty) _missionEmpty.style.display = '';
     return;
   }
-  if (empty) empty.style.display = 'none';
+  if (_missionEmpty) _missionEmpty.style.display = 'none';
 
   const frag = document.createDocumentFragment();
   _missionEntries.forEach(entry => {
@@ -132,8 +134,8 @@ function _mission_render() {
     frag.appendChild(row);
   });
 
-  scroll.appendChild(frag);
-  scroll.scrollTop = scroll.scrollHeight;
+  _missionScroll.appendChild(frag);
+  _missionScroll.scrollTop = _missionScroll.scrollHeight;
 }
 
 // ─── Mirror significant events from the main event log ───────────────────────
@@ -188,6 +190,8 @@ function _bind_clear() {
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 function _mission_init() {
+  _missionScroll = document.getElementById('missionScroll');
+  _missionEmpty  = document.getElementById('missionEmpty');
   _mission_restore();   // restore entries from previous page load in this session
   _bind_clear();
   _bind_export();

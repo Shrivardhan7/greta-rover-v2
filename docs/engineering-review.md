@@ -57,7 +57,7 @@ All compile-time constants (`GRETA_MIN_HEAP_BYTES`, `TASK_INTERVAL_CRITICAL_MS`,
 
 A simple per-date log of what changed. This is already partially documented in `greta-master-log.md` but a `CHANGELOG.md` in the root gives contributors a single place to check history.
 
-### 1.3 Add `tests/README.md`
+### 1.3 Add `tests/readme.md`
 
 A short note explaining how to run unit tests (`pio test -e native`) and integration tests (`pio test -e esp32`). This is not obvious to a first-time contributor.
 
@@ -226,13 +226,13 @@ Add a footer to each document in `docs/`:
 *Copyright (c) 2026 Shrivardhan Jadhav — Licensed under Apache License 2.0*
 ```
 
-### 5.2 README should link to all key docs
+### 5.2 readme should link to all key docs
 
-The README already does this partially. Ensure links to `SAFETY_MODEL.md`, `DESIGN_RULES.md`, and `BOOT_SEQUENCE.md` are present so a new reader can navigate quickly.
+The `readme.md` already does this partially. Ensure links to `safety-model.md`, `design-rules.md`, and `boot-sequence.md` are present so a new reader can navigate quickly.
 
-### 5.3 SAFETY.md in root
+### 5.3 safety.md in root
 
-A `SAFETY.md` in the repository root is standard practice for robotics projects. It makes safety information discoverable without reading the full documentation set. This file has been created as part of this review.
+A `safety.md` in the repository root keeps safety information discoverable without reading the full documentation set. This file has been created as part of this review.
 
 ---
 
@@ -250,3 +250,4 @@ In priority order:
 ---
 
 *Greta V2 Engineering Review — April 2026*
+

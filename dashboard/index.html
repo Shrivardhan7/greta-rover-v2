@@ -2,7 +2,7 @@
 Greta Rover OS
 Copyright (c) 2026 Shrivardhan Jadhav
 SPDX-License-Identifier: Apache-2.0
-Licensed under Apache License Version 2.0
+Licensed under Apache License 2.0
 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +14,7 @@ Licensed under Apache License Version 2.0
   <title>GRETA V2 — Control Terminal</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body class="dark">
+<body class="theme-greta-dark">
 
   <!-- ══════════════════════════════════════════════ HEADER -->
   <header role="banner">
@@ -26,7 +26,7 @@ Licensed under Apache License Version 2.0
       <div class="subtitle" aria-hidden="true">ROVER CONTROL TERMINAL</div>
     </div>
     <div class="header-right">
-      <button id="themeToggle" class="btn-icon" title="Toggle light / dark theme" aria-label="Toggle theme">
+      <button id="themeToggle" class="btn-icon" title="Cycle Greta theme" aria-label="Cycle Greta theme">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="5"/>
           <line x1="12" y1="1"  x2="12" y2="3"/>
@@ -131,13 +131,13 @@ Licensed under Apache License Version 2.0
       <div class="panel" id="modePanel" role="region" aria-label="Operating mode">
         <div class="panel-title">OPERATING MODE</div>
         <div class="mode-badge-row">
-          <div class="mode-badge" id="modeBadge" aria-live="polite">MANUAL</div>
-          <div class="mode-desc" id="modeDesc">Direct control active</div>
+          <div class="mode-badge" id="modeBadge" aria-live="polite">IDLE</div>
+          <div class="mode-desc" id="modeDesc">Awaiting operator mode selection</div>
         </div>
         <div class="mode-btn-grid" role="group" aria-label="Mode selection">
-          <button class="mode-btn active" data-mode="MANUAL"     id="modeManual">MANUAL</button>
+          <button class="mode-btn active" data-mode="IDLE"       id="modeIdle">IDLE</button>
+          <button class="mode-btn"        data-mode="MANUAL"     id="modeManual">MANUAL</button>
           <button class="mode-btn"        data-mode="AUTONOMOUS" id="modeAutonomous">AUTO</button>
-          <button class="mode-btn"        data-mode="VOICE"      id="modeVoice">VOICE</button>
           <button class="mode-btn safe"   data-mode="SAFE"       id="modeSafe">SAFE</button>
         </div>
       </div>
@@ -189,8 +189,8 @@ Licensed under Apache License Version 2.0
         </div>
       </div>
 
-      <!-- Voice Control Panel (hidden until VOICE mode is active) -->
-      <div class="panel" id="voicePanel" role="region" aria-label="Voice control">
+      <!-- Voice Control Panel (available while MANUAL mode is active) -->
+      <div class="panel" id="voicePanel" role="region" aria-label="Voice control" hidden>
         <div class="panel-title">
           VOICE CONTROL
           <span class="voice-status-label" id="voiceStatusLabel">INACTIVE</span>

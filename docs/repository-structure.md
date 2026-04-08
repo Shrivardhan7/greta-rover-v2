@@ -216,3 +216,19 @@ test_framework = unity
 | Config constants | `GRETA_<SCOPE>_<NAME>` | `GRETA_MIN_HEAP_BYTES` |
 | Public functions | `<module>_<verb>()` | `health_manager_fault()` |
 | Internal functions | `static` in `.cpp`, any name | `static void drain_queue()` |
+
+---
+
+## Current Firmware Layout
+
+The live ESP32 firmware remains under `esp32-brain/include` and `esp32-brain/src`. For the current hardware-integration phase, responsibilities are grouped logically rather than by a disruptive file move:
+
+| Logical group | Current modules |
+|---|---|
+| `core` | `scheduler`, `event_bus`, `state_manager`, `health_manager` |
+| `behavior` | `mode_manager`, `task_manager`, `behavior_manager` |
+| `modules` | `network_manager`, `bluetooth_bridge`, `telemetry`, `command_processor` |
+| `diagnostics` | `telemetry`, `health_manager`, safety and architecture docs |
+| `system` | `main.cpp`, `config.h`, boot/runtime integration |
+
+This keeps the repository stable while making the intended `/core`, `/modules`, `/system`, `/behavior`, and `/diagnostics` boundaries explicit for future growth.

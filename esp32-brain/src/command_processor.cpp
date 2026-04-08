@@ -1,6 +1,7 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -31,11 +32,16 @@
 // ============================================================================
 
 #include "command_processor.h"
+#include "behavior_manager.h"
 #include "config.h"
 #include "state_manager.h"
-#include "bluetooth_bridge.h"
 #include "network_manager.h"
+#include "task_manager.h"
 #include <Arduino.h>
+
+#define command_update command_update_legacy
+#define command_receive command_receive_legacy
+#define command_receive_ack command_receive_ack_legacy
 
 // ── Private state ─────────────────────────────────────────────────────────────
 static char     _lastCmd[32]    = "NONE";
@@ -77,7 +83,7 @@ static void _record_cmd(const char* cmd) {
 // Does NOT set state here — state is driven by ACK or ACK timeout.
 static void _issue_stop(const char* reason) {
     Serial.printf("[CMD] STOP → Arduino (reason: %s)\n", reason);
-    bluetooth_send(CMD_STOP);
+    behavior_dispatch_command(CMD_STOP, COMMAND_SOURCE_DASHBOARD, nullptr);
     _record_cmd(CMD_STOP);
     _cmdSentMs  = millis();
     _waitingAck = true;
@@ -101,7 +107,7 @@ void command_update() {
     if (state_get() == STATE_MOVING) {
         if ((now - _lastCmdMs) >= CMD_TIMEOUT_MS) {
             _issue_stop("cmd timeout");
-            state_set(STATE_READY, "cmd timeout");
+            behavior_force_safe("cmd timeout");
         }
     }
 
@@ -112,8 +118,8 @@ void command_update() {
         Serial.println(F("[CMD] ACK timeout → force STOP"));
         _waitingAck    = false;
         _lastLatencyMs = 0;
-        bluetooth_send(CMD_STOP);
-        state_set(STATE_READY, "ACK timeout");
+        behavior_dispatch_command(CMD_STOP, COMMAND_SOURCE_DASHBOARD, nullptr);
+        behavior_force_safe("ACK timeout");
     }
 }
 
@@ -135,7 +141,6 @@ void command_receive(const char* cmd) {
     if (_is_stop_cmd(cmd)) {
         Serial.printf("[CMD] STOP received (%s)\n", cmd);
         _issue_stop("explicit stop");
-        state_set(STATE_READY, "STOP command");
         return;
     }
 
@@ -152,7 +157,7 @@ void command_receive(const char* cmd) {
     }
 
     // Forward to Arduino
-    bluetooth_send(cmd);
+    behavior_dispatch_command(cmd, COMMAND_SOURCE_DASHBOARD, nullptr);
     _record_cmd(cmd);
     _cmdSentMs  = millis();
     _waitingAck = true;
@@ -176,7 +181,7 @@ void command_receive_ack(const char* ack) {
     // Obstacle detected by Arduino ultrasonic sensor
     if (strcmp(ack, ACK_OBSTACLE) == 0) {
         _record_cmd("OBSTACLE");
-        state_set(STATE_SAFE, "obstacle detected");
+        behavior_force_safe("obstacle detected");
         network_broadcast("{\"event\":\"OBSTACLE\"}");
         return;
     }
@@ -184,6 +189,7 @@ void command_receive_ack(const char* ack) {
     // Arduino confirmed stop
     if (strcmp(ack, ACK_STOP) == 0) {
         state_set(STATE_READY, "STOP ACK");
+        behavior_note_stop_command("stop ack");
         return;
     }
 
@@ -201,3 +207,92 @@ void command_receive_ack(const char* ack) {
 const char* command_last()            { return _lastCmd; }
 uint32_t    command_last_latency_ms() { return _lastLatencyMs; }
 bool        command_waiting_ack()     { return _waitingAck; }
+
+#undef command_update
+#undef command_receive
+#undef command_receive_ack
+
+void command_update(void) {
+    const uint32_t now = millis();
+
+    if (state_get() == STATE_MOVING && (now - _lastCmdMs) >= CMD_TIMEOUT_MS) {
+        behavior_dispatch_command(CMD_STOP, COMMAND_SOURCE_DASHBOARD, nullptr);
+        _record_cmd(CMD_STOP);
+        _cmdSentMs  = millis();
+        _waitingAck = true;
+        _ackWaitMs  = millis();
+        behavior_force_safe("cmd timeout");
+    }
+
+    if (_waitingAck && ((now - _ackWaitMs) >= BT_ACK_TIMEOUT_MS)) {
+        Serial.println(F("[CMD] ACK timeout -> force STOP"));
+        _waitingAck    = false;
+        _lastLatencyMs = 0;
+        behavior_dispatch_command(CMD_STOP, COMMAND_SOURCE_DASHBOARD, nullptr);
+        behavior_force_safe("ACK timeout");
+    }
+}
+
+void command_receive(const char* cmd) {
+    if (!cmd || cmd[0] == '\0') return;
+
+    if (strcmp(cmd, CMD_PING) == 0) {
+        network_broadcast("{\"event\":\"PONG\"}");
+        return;
+    }
+
+    if (strcmp(cmd, CMD_PONG) == 0) {
+        network_on_pong();
+        return;
+    }
+
+    if (!_is_whitelisted(cmd)) {
+        Serial.printf("[CMD] Rejected unknown command: %s\n", cmd);
+        return;
+    }
+
+    const char* reason = "";
+    if (!behavior_dispatch_command(cmd, COMMAND_SOURCE_DASHBOARD, &reason)) {
+        Serial.printf("[CMD] Rejected '%s' - %s\n", cmd, reason ? reason : "");
+        return;
+    }
+
+    _record_cmd(cmd);
+    _cmdSentMs  = millis();
+    _waitingAck = true;
+    _ackWaitMs  = millis();
+    if (!_is_stop_cmd(cmd)) {
+        state_set(STATE_MOVING, cmd);
+    }
+}
+
+void command_receive_ack(const char* ack) {
+    if (!ack || ack[0] == '\0') return;
+
+    if (_waitingAck) {
+        _lastLatencyMs = millis() - _cmdSentMs;
+        _waitingAck    = false;
+        Serial.printf("[CMD] ACK '%s' - RTT %lu ms\n", ack, _lastLatencyMs);
+    } else {
+        Serial.printf("[CMD] ACK '%s' (unsolicited)\n", ack);
+    }
+
+    if (strcmp(ack, ACK_OBSTACLE) == 0) {
+        _record_cmd("OBSTACLE");
+        behavior_force_safe("obstacle detected");
+        network_broadcast("{\"event\":\"OBSTACLE\"}");
+        return;
+    }
+
+    if (strcmp(ack, ACK_STOP) == 0) {
+        state_set(STATE_READY, "STOP ACK");
+        behavior_note_stop_command("stop ack");
+        task_manager_reset_to_idle("stop ack");
+        return;
+    }
+
+    if (strcmp(ack, ACK_BOOT) == 0) {
+        Serial.println(F("[CMD] Arduino boot confirmed"));
+        return;
+    }
+}

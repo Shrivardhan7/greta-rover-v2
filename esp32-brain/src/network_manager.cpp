@@ -1,6 +1,7 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -34,8 +35,9 @@
 // ============================================================================
 
 #include "network_manager.h"
+#include "behavior_manager.h"
 #include "config.h"
-#include "state_manager.h"
+#include "health_manager.h"
 #include <WiFi.h>
 #include <ESPmDNS.h>
 #include <WebSocketsServer.h>
@@ -96,7 +98,7 @@ void network_update() {
             _wifiOk   = false;
             _wsActive = false;
             Serial.println(F("[NET] WiFi lost → SAFE"));
-            state_set(STATE_SAFE, "WiFi lost");
+            behavior_force_safe("WiFi lost");
         }
 
         // Move to the next SSID if this attempt has timed out
@@ -115,6 +117,8 @@ void network_update() {
         _on_wifi_up();
     }
 
+    health_manager_record_rssi(WiFi.RSSI());
+
     _ws.loop();
 
     // ── Heartbeat PING / PONG ────────────────────────────────────────────────
@@ -127,7 +131,7 @@ void network_update() {
         // PONG watchdog — declares dashboard offline if it stops responding
         if ((now - _lastPongMs) >= HEARTBEAT_PONG_TIMEOUT_MS) {
             Serial.println(F("[NET] Heartbeat timeout → SAFE"));
-            state_set(STATE_SAFE, "heartbeat timeout");
+            behavior_force_safe("heartbeat timeout");
             _heartbeatArmed = false;
         }
     }
@@ -201,7 +205,7 @@ static void _ws_event(uint8_t num, WStype_t type, uint8_t* payload, size_t lengt
             // so we go safe and let the browser auto-reconnect to recover.
             _wsActive       = false;
             _heartbeatArmed = false;
-            state_set(STATE_SAFE, "WS client disconnected");
+            behavior_force_safe("WS client disconnected");
             break;
 
         case WStype_TEXT: {

@@ -3,6 +3,8 @@
 A self-engineered modular robotics platform combining embedded systems, AI processing, and mobile control.  
 Built as a learning and portfolio project in embedded systems architecture and robotics engineering.
 
+See also: [First Motor Bring-Up Procedure](docs/first_motor_bringup.md)
+
 ---
 
 ## Overview
@@ -77,16 +79,16 @@ Communication between ESP32 and Arduino uses a structured serial command protoco
 ## Repository Structure
 
 ```
-greta-v2/
-├── arduino/          # Arduino Uno motor + sensor firmware
-├── esp32/            # ESP32-S3 AI + comms firmware
+greta-rover-v2/
+├── arduino-motion-layer/   # Arduino Uno motor + sensor firmware
+├── esp32-brain/            # ESP32-S3 AI + comms firmware
 ├── dashboard/        # Web control interface
 ├── docs/             # Technical documentation
-├── VERSION           # Current version tag
+├── version           # Current version tag
 ├── LICENSE           # Apache License 2.0
 ├── NOTICE            # Third-party notices
-├── SAFETY.md         # Safety guidelines
-└── README.md         # This file
+├── safety.md               # Safety guidelines
+└── readme.md               # This file
 ```
 
 ---
@@ -126,7 +128,7 @@ This project involves moving mechanical parts and electrical components.
 - Ensure motors are powered off before uploading new firmware.
 - Do not operate the rover near people or fragile objects during development.
 - Implement and test emergency stop logic before autonomous mode.
-- Review `SAFETY.md` before running the rover.
+- Review `safety.md` before running the rover.
 
 This project is intended for **educational use only**. The author is not responsible for any damage or injury arising from use of this codebase.
 
@@ -145,3 +147,5 @@ GitHub: [Shrivardhan7](https://github.com/Shrivardhan7)
 Licensed under the **Apache License 2.0**.  
 See [LICENSE](./LICENSE) for details.  
 See [NOTICE](./NOTICE) for third-party acknowledgements.
+
+

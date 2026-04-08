@@ -1,6 +1,7 @@
 /**
  * Greta Rover OS
  * Copyright (c) 2026 Shrivardhan Jadhav
+ * SPDX-License-Identifier: Apache-2.0
  * Licensed under Apache License 2.0
  * https://www.apache.org/licenses/LICENSE-2.0
  */
@@ -45,15 +46,25 @@
 // ============================================================================
 
 #include "mode_manager.h"
+#include "event_bus.h"
 #include "network_manager.h"
 #include "state_manager.h"
 #include <Arduino.h>
+#include <string.h>
+
+#define MODE_VOICE MODE_ERROR
+#define mode_init mode_init_legacy
+#define mode_update mode_update_legacy
+#define mode_receive mode_receive_legacy
+#define mode_get mode_get_legacy
+#define mode_name mode_name_legacy
 
 // ── Private state ─────────────────────────────────────────────────────────────
-static RoverMode _mode = MODE_MANUAL;
+static RoverMode _mode = MODE_IDLE;
+static char _lastReason[32] = "";
 
 static const char* const MODE_NAMES[MODE_COUNT] = {
-    "MANUAL", "AUTONOMOUS", "VOICE", "SAFE"
+    "IDLE", "MANUAL", "AUTONOMOUS", "SAFE", "ERROR"
 };
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -107,3 +118,135 @@ void mode_receive(const char* modeStr) {
 // ── Accessors ────────────────────────────────────────────────────────────────
 RoverMode   mode_get()  { return _mode; }
 const char* mode_name() { return MODE_NAMES[_mode]; }
+
+#undef MODE_VOICE
+#undef mode_init
+#undef mode_update
+#undef mode_receive
+#undef mode_get
+#undef mode_name
+
+static RoverMode s_mode = MODE_IDLE;
+static char s_last_reason[32] = "";
+
+static const char* const S_MODE_NAMES[MODE_COUNT] = {
+    "IDLE",
+    "MANUAL",
+    "AUTONOMOUS",
+    "SAFE",
+    "ERROR"
+};
+
+static void mode_store_reason(const char* reason) {
+    if (!reason) {
+        s_last_reason[0] = '\0';
+        return;
+    }
+
+    strncpy(s_last_reason, reason, sizeof(s_last_reason) - 1);
+    s_last_reason[sizeof(s_last_reason) - 1] = '\0';
+}
+
+static void mode_publish(RoverMode mode) {
+    EventPayload payload = {};
+    payload.channel = EVENT_MODE_CHANGED;
+    payload.timestamp_ms = millis();
+    payload.data[0] = (uint8_t)mode;
+    event_publish(EVENT_MODE_CHANGED, &payload);
+}
+
+static bool mode_apply(RoverMode next, const char* reason, bool announce) {
+    if (next >= MODE_COUNT) return false;
+    if (s_mode == next) return true;
+
+    Serial.printf("[MODE] %s -> %s (%s)\n",
+                  S_MODE_NAMES[s_mode],
+                  S_MODE_NAMES[next],
+                  reason ? reason : "");
+
+    s_mode = next;
+    mode_store_reason(reason);
+    mode_publish(next);
+
+    if (announce) {
+        char ack[64];
+        snprintf(ack, sizeof(ack), "{\"event\":\"MODE_ACK\",\"mode\":\"%s\"}", S_MODE_NAMES[s_mode]);
+        network_broadcast(ack);
+    }
+
+    return true;
+}
+
+void mode_init(void) {
+    s_mode = MODE_IDLE;
+    mode_store_reason("boot");
+}
+
+void mode_update(void) {
+    if (state_get() == STATE_ERROR && s_mode != MODE_ERROR) {
+        mode_apply(MODE_ERROR, "state error", false);
+        return;
+    }
+
+    if (state_get() == STATE_SAFE && s_mode != MODE_SAFE) {
+        mode_apply(MODE_SAFE, "state safe", false);
+        return;
+    }
+
+    if (state_get() == STATE_READY && (s_mode == MODE_SAFE || s_mode == MODE_ERROR)) {
+        mode_apply(MODE_IDLE, "state recovered", true);
+    }
+}
+
+bool mode_request(RoverMode requested, const char* reason) {
+    if (requested >= MODE_COUNT) return false;
+
+    if (requested == MODE_SAFE || requested == MODE_ERROR) {
+        return mode_apply(requested, reason, true);
+    }
+
+    if (!state_is_online() || state_is_halted()) {
+        network_broadcast("{\"event\":\"MODE_REJECTED\"}");
+        return false;
+    }
+
+    return mode_apply(requested, reason, true);
+}
+
+bool mode_request_from_string(const char* mode_str, const char* reason) {
+    if (!mode_str) return false;
+
+    RoverMode requested = MODE_COUNT;
+    if (strcmp(mode_str, "IDLE") == 0) requested = MODE_IDLE;
+    else if (strcmp(mode_str, "MANUAL") == 0) requested = MODE_MANUAL;
+    else if (strcmp(mode_str, "AUTONOMOUS") == 0) requested = MODE_AUTONOMOUS;
+    else if (strcmp(mode_str, "SAFE") == 0) requested = MODE_SAFE;
+    else if (strcmp(mode_str, "ERROR") == 0) requested = MODE_ERROR;
+
+    if (requested == MODE_COUNT) {
+        network_broadcast("{\"event\":\"MODE_REJECTED\"}");
+        return false;
+    }
+
+    return mode_request(requested, reason);
+}
+
+void mode_force(RoverMode next, const char* reason) {
+    mode_apply(next, reason, true);
+}
+
+RoverMode mode_get(void) {
+    return s_mode;
+}
+
+const char* mode_name(void) {
+    return S_MODE_NAMES[s_mode];
+}
+
+const char* mode_last_reason(void) {
+    return s_last_reason;
+}
+
+bool mode_is_motion_permitted(void) {
+    return s_mode == MODE_MANUAL || s_mode == MODE_AUTONOMOUS;
+}

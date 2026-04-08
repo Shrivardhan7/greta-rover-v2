@@ -7,13 +7,16 @@
 
 #pragma once
 
+#error "GRETA OS build blocked: copy wifi_secrets_template.h to esp32-brain/wifi_secrets.h and include that local file instead."
+
 // ============================================================================
 //  wifi_secrets_template.h  —  Greta V2 / ESP32-S3 WiFi Credentials Template
 //
 //  SETUP INSTRUCTIONS:
-//    1. Copy this file to:  ESP32_Firmware/config/wifi_secrets.h
+//    1. Copy this file locally to:  esp32-brain/wifi_secrets.h
 //    2. Fill in your network credentials below.
-//    3. wifi_secrets.h is listed in .gitignore — it will never be committed.
+//    3. config.h expects wifi_secrets.h to exist for local builds.
+//    4. wifi_secrets.h is listed in .gitignore — it will never be committed.
 //
 //  NETWORK PRIORITY:
 //    SSID_0  →  Primary network (home WiFi) — tried first
@@ -40,3 +43,4 @@
 // ----------------------------------------------------------------------------
 // #define WIFI_SSID_2  "YOUR_HOTSPOT_NAME"
 // #define WIFI_PASS_2  "YOUR_HOTSPOT_PASSWORD"
+
