@@ -52,6 +52,8 @@
 #define TELEMETRY_INTERVAL_MS       1000   // Dashboard JSON broadcast interval
 #define HEARTBEAT_INTERVAL_MS       5000   // PING → dashboard interval
 #define HEARTBEAT_PONG_TIMEOUT_MS  12000   // STATE_SAFE if no PONG within 12 s
+#define ROOM_RECOMPUTE_INTERVAL_MS   200   // Max room identity recompute cadence
+#define ROOM_DECAY_INTERVAL_MS      1000   // Confidence decay cadence
 
 // ── Command strings (Dashboard → ESP32 → Arduino) ────────────────────────────
 #define CMD_FORWARD   "MOVE F"
@@ -84,9 +86,27 @@
 #define TEL_KEY_RSSI      "rssi"           // Optional: WiFi signal strength (dBm)
 #define TEL_KEY_LATENCY   "latencyMs"      // Optional: last cmd→ack round-trip (ms)
 #define TEL_KEY_OBS_TIME  "lastObsTs"      // Optional: millis() of last obstacle event
+#define TEL_KEY_HOME      "home"
+#define TEL_KEY_ROOM_NODE "roomNode"
+#define TEL_KEY_ROOM_TYPE "roomType"
+#define TEL_KEY_ROOM_OWNER "roomOwner"
+#define TEL_KEY_ROOM_CONFIDENCE "roomConfidence"
+#define TEL_KEY_ROOM_REVIEW "roomNeedsReview"
+#define TEL_KEY_ROOM_RESTRICTED "roomRestricted"
+#define TEL_KEY_ROOM_ALT_TYPE "roomAltType"
+#define TEL_KEY_ROOM_ALT_CONFIDENCE "roomAltConfidence"
+#define TEL_KEY_ROOM_SIGNALS "roomSignals"
+#define TEL_KEY_ROOM_LAST_VERIFIED "roomLastVerified"
+#define TEL_KEY_ROOM        "room"
+#define TEL_KEY_NODE        "node"
+#define TEL_KEY_TYPE        "type"
+#define TEL_KEY_OWNER       "owner"
+#define TEL_KEY_CONFIDENCE  "confidence"
+#define TEL_KEY_RESTRICTED  "restricted"
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
 // Comment out a flag to disable that feature at compile time.
 #define FEATURE_HEARTBEAT              // PING/PONG watchdog with dashboard
 #define FEATURE_TELEMETRY_RSSI         // Include WiFi RSSI in telemetry frame
 // #define FEATURE_TELEMETRY_LATENCY   // Include cmd latency in telemetry frame
+#define ROOM_IDENTITY_ENABLE_FS_PERSISTENCE 0

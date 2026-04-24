@@ -12,6 +12,7 @@
 #include "health_manager.h"
 #include "mode_manager.h"
 #include "network_manager.h"
+#include "room_identity_manager.h"
 #include "state_manager.h"
 #include "task_manager.h"
 #include <Arduino.h>
@@ -162,6 +163,14 @@ bool behavior_dispatch_command(const char* cmd, CommandSource source, const char
     }
 
     if (decision.is_motion) {
+        const RoomProfile room = roomIdentityManager.getRoomProfile();
+        if (room.restricted) {
+            if (reason_out) *reason_out = "room restricted";
+            behavior_force_safe("room restricted");
+            behavior_note_command_rejected(cmd, "room restricted");
+            return false;
+        }
+
         if (!task_manager_dispatch_motion(owner, cmd, "motion")) {
             if (reason_out) *reason_out = "task ownership rejected";
             return false;

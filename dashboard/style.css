@@ -227,7 +227,8 @@ main {
 
 .conn-input-row { display: flex; gap: 8px; }
 
-input[type="text"] {
+input[type="text"],
+select {
   flex: 1;
   background: var(--bg-raised);
   border: 1px solid var(--border);
@@ -239,7 +240,10 @@ input[type="text"] {
   outline: none;
   transition: border-color 0.2s;
 }
-input[type="text"]:focus       { border-color: var(--accent); }
+input[type="text"]:focus,
+select:focus {
+  border-color: var(--accent);
+}
 input[type="text"]::placeholder { color: var(--text-faint); }
 
 .btn-connect {
@@ -517,6 +521,7 @@ body.mode-blocked .dpad-btn:not(.stop) {
 .log-entry.ev-mode     .log-msg { color: var(--accent2); }
 .log-entry.ev-voice    .log-msg { color: var(--warn); }
 .log-entry.ev-system   .log-msg { color: var(--text-dim); font-style: italic; }
+.log-entry.ev-room     .log-msg { color: var(--accent); }
 
 /* ─── 12. Obstacle banner ─────────────────────────────────────────────────── */
 .obstacle-banner {
@@ -702,6 +707,122 @@ body.mode-blocked .dpad-btn:not(.stop) {
 .mission-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 /* ─── 16. Responsive overrides ────────────────────────────────────────────── */
+.room-status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.room-item.span2 { grid-column: 1 / -1; }
+
+.room-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.room-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  min-height: 18px;
+  word-break: break-word;
+}
+
+.room-value.ok { color: var(--ok); }
+.room-value.warn { color: var(--warn); }
+.room-value.error { color: var(--error); }
+.room-value.accent { color: var(--accent); }
+
+.room-control-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.room-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.room-field span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.room-field-span2 {
+  grid-column: 1 / -1;
+}
+
+.room-check-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.room-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+
+.room-check input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.room-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.btn-room {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #000;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.12s;
+}
+
+.btn-room:hover {
+  opacity: 0.85;
+}
+
+.btn-room:active {
+  transform: scale(0.98);
+}
+
+.btn-room.secondary {
+  background: var(--bg-raised);
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+}
+
+.room-divider {
+  height: 1px;
+  background: var(--border);
+  margin-top: 16px;
+}
+
 @media (max-width: 720px) {
   main { grid-template-columns: 1fr; }
 }
@@ -711,4 +832,5 @@ body.mode-blocked .dpad-btn:not(.stop) {
   .dpad-btn    { width: 70px; height: 70px; }
   .dpad-spacer { width: 70px; height: 70px; }
   .logo        { font-size: 18px; }
+  .room-control-grid { grid-template-columns: 1fr; }
 }

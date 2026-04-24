@@ -16,7 +16,7 @@
 //  This keeps modules independent and the JSON frame always consistent.
 //
 //  JSON field keys are defined in config.h (TEL_KEY_* constants).
-//  Buffer sizing: 256 bytes. Verify with the ArduinoJson Assistant if you
+//  Buffer sizing: 512 bytes. Verify with the ArduinoJson Assistant if you
 //  add new fields: https://arduinojson.org/v6/assistant/
 //
 //  Memory:

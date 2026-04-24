@@ -28,7 +28,7 @@
 //  Memory:
 //    StaticJsonDocument lives on the stack — no heap allocation.
 //    _jsonBuf is a static char array — reused each tick.
-//    Buffer size is 256 bytes; verify with ArduinoJson Assistant if you
+//    Buffer size is 512 bytes; verify with ArduinoJson Assistant if you
 //    add new fields: https://arduinojson.org/v6/assistant/
 // ============================================================================
 
@@ -39,11 +39,13 @@
 #include "bluetooth_bridge.h"
 #include "command_processor.h"
 #include "mode_manager.h"
+#include "room_identity_manager.h"
 #include <ArduinoJson.h>
 #include <Arduino.h>
 
 // ── Private ───────────────────────────────────────────────────────────────────
 static uint32_t _lastBroadcastMs = 0;
+static char     _jsonBufRoom[512];
 static char     _jsonBuf[256];      // Static output buffer — no heap allocation
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
@@ -57,14 +59,39 @@ void telemetry_update() {
     if ((now - _lastBroadcastMs) < TELEMETRY_INTERVAL_MS) return;
     _lastBroadcastMs = now;
 
-    telemetry_build(_jsonBuf, sizeof(_jsonBuf));
-    network_broadcast(_jsonBuf);
+    telemetry_build(_jsonBufRoom, sizeof(_jsonBufRoom));
+    network_broadcast(_jsonBufRoom);
 }
 
 // ── Build ──────────────────────────────────────────────────────────────────────
 // Populates buf with a JSON telemetry frame. Does not allocate from heap.
-// buf must be at least 256 bytes. Caller owns the buffer.
+// buf must be at least 512 bytes. Caller owns the buffer.
 void telemetry_build(char* buf, size_t bufLen) {
+    {
+        StaticJsonDocument<512> doc;
+
+        doc[TEL_KEY_STATE]    = state_name();
+        doc[TEL_KEY_MODE]     = mode_name();
+        doc[TEL_KEY_WIFI]     = network_wifi_ok()     ? "OK" : "LOST";
+        doc[TEL_KEY_BT]       = bluetooth_connected() ? "OK" : "LOST";
+        doc[TEL_KEY_UPTIME]   = millis() / 1000;
+        doc[TEL_KEY_LAST_CMD] = command_last();
+
+#ifdef FEATURE_TELEMETRY_RSSI
+        doc[TEL_KEY_RSSI] = network_rssi();
+#endif
+
+#ifdef FEATURE_TELEMETRY_LATENCY
+        const uint32_t lat = command_last_latency_ms();
+        if (lat > 0) doc[TEL_KEY_LATENCY] = lat;
+#endif
+
+        room_identity_build_telemetry(doc);
+        serializeJson(doc, buf, bufLen);
+        return;
+    }
+
+#if 0
     StaticJsonDocument<256> doc;   // Stack-allocated; freed when function returns
 
     // Core fields — always present
@@ -86,4 +113,5 @@ void telemetry_build(char* buf, size_t bufLen) {
 #endif
 
     serializeJson(doc, buf, bufLen);
+#endif
 }

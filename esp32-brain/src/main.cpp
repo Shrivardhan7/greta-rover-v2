@@ -44,6 +44,7 @@
 #include "mode_manager.h"     // Rover operating mode (MANUAL / AUTONOMOUS / SAFE)
 #include "task_manager.h"     // Lightweight task lifecycle registry
 #include "behavior_manager.h" // Deterministic arbitration and safety policy
+#include "room_identity_manager.h"
 
 // ── Future Module Hooks (not yet implemented) ─────────────────────────────────
 // Uncomment each block when the module is ready.
@@ -67,6 +68,10 @@
 static void on_dashboard_command(const char* cmd) {
     if (cmd && strncmp(cmd, "MODE ", 5) == 0) {
         behavior_handle_mode_request(cmd + 5);
+        return;
+    }
+    if (cmd && strncmp(cmd, "ROOM ", 5) == 0) {
+        room_identity_handle_command(cmd);
         return;
     }
     command_receive(cmd);
@@ -150,6 +155,7 @@ void setup() {
     mode_init();
     task_manager_init();
     behavior_manager_init();
+    room_identity_manager_init();
     telemetry_init();
 
     network_set_command_callback(on_dashboard_command);
@@ -181,6 +187,7 @@ void loop() {
         behavior_manager_update();
         command_update();
         task_manager_update();
+        room_identity_manager_update();
     }
     if (scheduler_due(TASK_NETWORK))    network_update();
 

@@ -112,6 +112,120 @@ Licensed under Apache License 2.0
         </div>
       </div>
 
+      <!-- Room Intelligence Panel -->
+      <div class="panel" id="roomPanel" role="region" aria-label="Room intelligence">
+        <div class="panel-title">ROOM INTELLIGENCE</div>
+
+        <div class="room-status-grid">
+          <div class="room-item">
+            <div class="room-label">HOME</div>
+            <div class="room-value mono" id="roomHomeValue">-</div>
+          </div>
+
+          <div class="room-item">
+            <div class="room-label">NODE</div>
+            <div class="room-value mono" id="roomNodeValue">-</div>
+          </div>
+
+          <div class="room-item">
+            <div class="room-label">ROOM TYPE</div>
+            <div class="room-value mono" id="roomTypeValue">-</div>
+          </div>
+
+          <div class="room-item">
+            <div class="room-label">OWNER</div>
+            <div class="room-value mono" id="roomOwnerValue">-</div>
+          </div>
+
+          <div class="room-item">
+            <div class="room-label">CONFIDENCE</div>
+            <div class="room-value mono" id="roomConfidenceValue">-</div>
+          </div>
+
+          <div class="room-item">
+            <div class="room-label">REVIEW</div>
+            <div class="room-value mono" id="roomReviewValue">-</div>
+          </div>
+
+          <div class="room-item span2">
+            <div class="room-label">SIGNALS</div>
+            <div class="room-value mono" id="roomSignalsValue">-</div>
+          </div>
+
+          <div class="room-item span2">
+            <div class="room-label">ALTERNATIVE</div>
+            <div class="room-value mono" id="roomAlternativeValue">-</div>
+          </div>
+
+          <div class="room-item span2">
+            <div class="room-label">LAST VERIFIED</div>
+            <div class="room-value mono" id="roomVerifiedValue">-</div>
+          </div>
+        </div>
+
+        <div class="room-control-grid">
+          <label class="room-field" for="roomHomeSelect">
+            <span>Home</span>
+            <select id="roomHomeSelect" aria-label="Select active home"></select>
+          </label>
+
+          <label class="room-field" for="roomNodeSelect">
+            <span>Node</span>
+            <select id="roomNodeSelect" aria-label="Select current node"></select>
+          </label>
+
+          <label class="room-field room-field-span2" for="roomPersonSelect">
+            <span>Detected Person</span>
+            <select id="roomPersonSelect" aria-label="Select detected person"></select>
+          </label>
+        </div>
+
+        <div class="room-check-row">
+          <label class="room-check">
+            <input type="checkbox" id="roomDoorClosed" />
+            <span>Door Closed</span>
+          </label>
+
+          <label class="room-check">
+            <input type="checkbox" id="roomSilent" />
+            <span>Silent</span>
+          </label>
+
+          <label class="room-check">
+            <input type="checkbox" id="roomActivity" />
+            <span>Activity</span>
+          </label>
+        </div>
+
+        <div class="room-actions">
+          <button class="btn-room" id="roomObserveBtn">APPLY SNAPSHOT</button>
+        </div>
+
+        <div class="room-divider" aria-hidden="true"></div>
+
+        <div class="room-control-grid">
+          <label class="room-field" for="roomOverrideNodeSelect">
+            <span>Override Node</span>
+            <select id="roomOverrideNodeSelect" aria-label="Select override node"></select>
+          </label>
+
+          <label class="room-field" for="roomOverrideTypeSelect">
+            <span>Override Type</span>
+            <select id="roomOverrideTypeSelect" aria-label="Select override room type"></select>
+          </label>
+
+          <label class="room-field room-field-span2" for="roomOverrideOwnerSelect">
+            <span>Override Owner</span>
+            <select id="roomOverrideOwnerSelect" aria-label="Select override owner"></select>
+          </label>
+        </div>
+
+        <div class="room-actions">
+          <button class="btn-room secondary" id="roomOverrideBtn">SAVE OVERRIDE</button>
+          <button class="btn-sm" id="roomClearOverrideBtn">CLEAR OVERRIDE</button>
+        </div>
+      </div>
+
       <!-- Robot Face / Status Display -->
       <div class="panel" id="facePanel" role="region" aria-label="Robot status display">
         <div class="panel-title">ROBOT STATUS</div>
@@ -252,11 +366,13 @@ Licensed under Apache License 2.0
       mode_manager.js — mode gating; wraps ws_on_message and cmd_send from app.js
       voice_control.js — voice recognition; depends on mode_get from mode_manager.js
       mission_log.js — mission log; wraps log_add from app.js
+      room_identity.js — room telemetry + manual room identity controls
   -->
   <script src="app.js"></script>
   <script src="mode_manager.js"></script>
   <script src="voice_control.js"></script>
   <script src="mission_log.js"></script>
+  <script src="room_identity.js"></script>
 
 </body>
 </html>
